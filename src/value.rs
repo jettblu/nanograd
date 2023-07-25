@@ -129,6 +129,15 @@ impl Value {
             }
         }
     }
+
+    pub fn trace(&self) {
+        let mut visited: HashSet<Value> = HashSet::new();
+        println!("Tracing value...");
+        println!();
+        trace_internal(&mut visited, self);
+        println!();
+        println!("Done tracing value!")
+    }
 }
 
 impl Hash for Value {
@@ -335,6 +344,20 @@ fn backward_by_operation(val: &Ref<ValueInternal>) {
         }
         Operation::None => {
             println!("No operation when running backward method.");
+        }
+    }
+}
+
+fn trace_internal(visited: &mut HashSet<Value>, value: &Value) {
+    if !visited.contains(&value) {
+        visited.insert(value.clone());
+
+        let borrowed_value = value.borrow();
+        println!("{:?}", borrowed_value);
+        // separate values with a newline
+        println!();
+        for child_id in &value.borrow().previous {
+            trace_internal(visited, child_id);
         }
     }
 }
