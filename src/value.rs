@@ -182,6 +182,25 @@ fn add(a: &Value, b: &Value) -> Value {
     Value::new(ValueInternal::new(result, None, Operation::Add, vec![a.clone(), b.clone()]))
 }
 
+// defines addition for f64 and Value
+// in this case the f64 is on the right side of the addition
+impl Add<f64> for Value {
+    type Output = Value;
+
+    fn add(self, other: f64) -> Self::Output {
+        add(&self, &Value::from(other))
+    }
+}
+
+// in this case the f64 is on the right side of the addition
+impl Add<Value> for f64 {
+    type Output = Value;
+
+    fn add(self, other: Value) -> Self::Output {
+        add(&Value::from(self), &other)
+    }
+}
+
 impl Sub<Value> for Value {
     type Output = Value;
 
@@ -203,6 +222,24 @@ impl<'a, 'b> Mul<&'b Value> for &'a Value {
 
     fn mul(self, other: &'b Value) -> Self::Output {
         mul(self, other)
+    }
+}
+
+// defines multiplication for f64 and Value
+// in this case the f64 is on the right side of the multiplication
+impl Mul<f64> for Value {
+    type Output = Value;
+
+    fn mul(self, other: f64) -> Self::Output {
+        mul(&self, &Value::from(other))
+    }
+}
+// in this case the f64 is on the right side of the multiplication
+impl Mul<Value> for f64 {
+    type Output = Value;
+
+    fn mul(self, other: Value) -> Self::Output {
+        mul(&Value::from(self), &other)
     }
 }
 
