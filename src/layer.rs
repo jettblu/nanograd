@@ -53,7 +53,7 @@ impl Layer {
             .collect()
     }
 
-    /// Get the parameters of the layer.
+    /// Get the weights and bias for each neuron within the layer.
     ///
     /// # Examples
     ///

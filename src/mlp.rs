@@ -59,7 +59,7 @@ impl MLP {
         xs
     }
 
-    /// Get the parameters of the network.
+    /// Get the parameters of the entire network.
     ///
     /// # Examples
     ///

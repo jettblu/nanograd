@@ -76,7 +76,7 @@ impl Neuron {
         sum.tanh()
     }
 
-    /// Get the parameters of the neuron.
+    /// Get the weights and bias of the neuron.
     ///
     /// # Examples
     ///
