@@ -1,5 +1,5 @@
 use crate::value::Value;
-use rand::{ thread_rng, Rng };
+use getrandom::getrandom;
 
 // struct adopted from https://github.com/danielway/micrograd-rs
 #[derive(Clone)]
@@ -23,10 +23,24 @@ impl Neuron {
     /// let neuron = Neuron::new(2);
     /// ```
     pub fn new(input_count: usize) -> Neuron {
-        let mut rng = thread_rng();
         let mut rand_value_fn = || {
-            let data = rng.gen_range(-1.0..1.0);
-            Value::from(data)
+            let mut buffer = [0u8; 4]; // A buffer to hold the random bytes
+
+            // Generate random bytes using getrandom
+            if let Err(err) = getrandom(&mut buffer) {
+                eprintln!("Error generating random bytes: {}", err);
+                return Value::from(0.0);
+            }
+
+            // Convert the bytes into a u32 random number
+            let random_number = u32::from_ne_bytes(buffer);
+
+            // Convert the u32 random number to a floating-point number between 0 and 1
+            let random_float = (random_number as f64) / (u32::MAX as f64);
+
+            // Map the range [0, 1] to the range [-1, 1]
+            let constrained_random = -1.0 + random_float * 2.0;
+            Value::from(constrained_random)
         };
 
         let mut weights = Vec::new();
