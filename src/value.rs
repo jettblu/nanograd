@@ -280,8 +280,6 @@ impl Sum for Value {
     }
 }
 
-type PropagateFn = fn(value: &Ref<ValueInternal>);
-
 ///
 /// Internal representation of a Value
 ///

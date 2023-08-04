@@ -1,6 +1,6 @@
 [package]
 name = "nanograd"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A nano neural network library. Scalar valued types with a PyTorch like API."
 repository = "https://github.com/jettblu/nanograd"
@@ -10,4 +10,4 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.8.5"
+rand = { version = "0.8.3", features = ["small_rng"]}
