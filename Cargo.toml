@@ -1,6 +1,6 @@
 [package]
 name = "nanograd"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "A nano neural network library. Scalar valued types with a PyTorch like API."
 repository = "https://github.com/jettblu/nanograd"
