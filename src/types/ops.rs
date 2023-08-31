@@ -1,4 +1,4 @@
-enum UnaryOps {
+pub enum UnaryOps {
     EXP2,
     NOOP,
     LOG2,
@@ -8,7 +8,7 @@ enum UnaryOps {
     RECIP,
 }
 
-enum BinaryOps {
+pub enum BinaryOps {
     ADD,
     SUB,
     MUL,
@@ -18,17 +18,17 @@ enum BinaryOps {
     CMPLT,
 }
 
-enum ReduceOps {
+pub enum ReduceOps {
     SUM,
     MAX,
 }
 
-enum TernaryOps {
+pub enum TernaryOps {
     MULACC,
     WHERE,
 }
 
-enum MovementOps {
+pub enum MovementOps {
     RESHAPE,
     PERMUTE,
     EXPAND,
@@ -37,7 +37,7 @@ enum MovementOps {
     STRIDE,
 }
 
-enum LoadOps {
+pub enum LoadOps {
     EMPTY,
     RAND,
     CONST,
