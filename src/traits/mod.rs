@@ -4,8 +4,10 @@ use std::fmt::Debug;
 
 extern crate num;
 use self::num::traits::Zero;
+use self::num::traits::One;
 
 pub trait TensorTrait<T>: Zero +
+    One +
     Clone +
     Copy +
     Display +
@@ -15,4 +17,5 @@ pub trait TensorTrait<T>: Zero +
 
 impl<T> TensorTrait<T>
     for T
-    where T: Zero + Clone + Copy + Display + Debug + Add<T, Output = T> + Mul<T, Output = T> {}
+    where
+        T: Zero + One + Clone + Copy + Display + Debug + Add<T, Output = T> + Mul<T, Output = T> {}
