@@ -1,4 +1,5 @@
 use std::ops::Add;
+use std::vec;
 
 use crate::DataArray;
 use crate::Device;
@@ -38,6 +39,42 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     // get device
     pub fn device(&self) -> &Device {
         self.lazy_data.device()
+    }
+    // get requires_grad
+    pub fn requires_grad(&self) -> &bool {
+        &self.requires_grad
+    }
+    pub fn full(
+        dim: Dimensions,
+        fill_value: T,
+        device: Option<Device>,
+        requires_grad: Option<bool>
+    ) -> Self {
+        let data: DataArray<T> = vec![fill_value; dim.0 * dim.1].into_boxed_slice();
+        Self::new(data, dim, device, requires_grad)
+    }
+
+    pub fn zeros(dim: Dimensions, device: Option<Device>, requires_grad: Option<bool>) -> Self {
+        Self::full(dim, T::zero(), device, requires_grad)
+    }
+
+    pub fn ones(dim: Dimensions, device: Option<Device>, requires_grad: Option<bool>) -> Self {
+        Self::full(dim, T::one(), device, requires_grad)
+    }
+
+    pub fn full_like(other: Tensor<T>, fill_value: T) -> Self {
+        let dim: Dimensions = other.dim();
+        let device: Option<Device> = Some(other.device().clone());
+        let requires_grad: Option<bool> = Some(other.requires_grad().clone());
+        Self::full(dim, fill_value, device, requires_grad)
+    }
+
+    pub fn zeros_like(other: Tensor<T>) -> Self {
+        Self::full_like(other, T::zero())
+    }
+
+    pub fn ones_like(other: Tensor<T>) -> Self {
+        Self::full_like(other, T::one())
     }
 }
 
