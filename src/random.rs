@@ -1,21 +1,33 @@
 use getrandom::getrandom;
 
-fn randomNumber(low: u8, high: u8) -> f64 {
+use crate::TensorTrait;
+
+pub fn random_number<T: TensorTrait<T>>(low: T, high: T) -> T {
     let mut buffer = [0u8; 4]; // A buffer to hold the random bytes
 
     // Generate random bytes using getrandom
     if let Err(err) = getrandom(&mut buffer) {
-        eprintln!("Error generating random bytes: {}", err);
-        return Value::from(0.0);
+        panic!("Error generating random bytes: {}", err);
     }
 
     // Convert the bytes into a u32 random number
-    let random_number = u32::from_ne_bytes(buffer);
+    let random_unsigned = u32::from_le_bytes(buffer);
 
     // Convert the u32 random number to a floating-point number between 0 and 1
-    let random_float = (random_number as f64) / (u32::MAX as f64);
+    let random_float = (random_unsigned as f64) / (u32::MAX as f64);
 
+    let result_num = T::try_from(random_float);
+    if result_num.is_err() {
+        panic!("Error converting random float to tensor type.");
+    }
+    let mut random_num: T = T::zero();
+    match result_num {
+        Ok(res) => {
+            random_num = res;
+        }
+        Err(err) => panic!("Error converting random float to tensor type"),
+    }
     // Map the range [0, 1] to the range [low, high]
-    let constrained_random = (low as f64) + random_float * ((high as f64) - (low as f64));
+    let constrained_random = low + random_num * (high - low);
     return constrained_random;
 }
