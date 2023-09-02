@@ -23,10 +23,15 @@ pub use crate::types::ops::BinaryOps;
 pub use crate::types::ops::ReduceOps;
 pub use crate::types::ops::TernaryOps;
 pub use crate::types::data::Dimensions;
-pub use crate::types::data::DType;
-pub use crate::types::data::default_data_type;
 pub use crate::types::data::LazyBuffer;
 pub use crate::types::data::DataArray;
 
 mod traits;
 pub use crate::traits::TensorTrait;
+
+mod random;
+pub use crate::random::random_number;
+
+mod helpers;
+pub use crate::helpers::is_valid_matrix_multiplication;
+pub use crate::helpers::new_dimensions_after_matrix_multiplication;
