@@ -12,6 +12,7 @@ use crate::LazyBuffer;
 use crate::TensorTrait;
 use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
+use crate::random_number;
 
 pub struct Tensor<T: TensorTrait<T>> {
     lazy_data: LazyBuffer<T>,
@@ -81,6 +82,48 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
 
     pub fn ones_like(other: Tensor<T>) -> Self {
         Self::full_like(other, T::one())
+    }
+
+    //
+    // Generate a tensor with random values drawn from a uniform distribution between 0 and 1.
+    //
+    // # Arguments
+    // * `dim` - The dimensions of the tensor.
+    // * `device` - The device to store the tensor on.
+    // * `requires_grad` - Whether or not the tensor requires gradients.
+    pub fn rand(dim: Dimensions, device: Option<Device>, requires_grad: Option<bool>) -> Self {
+        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+        let mut i: usize = 0;
+        while i < dim.0 * dim.1 {
+            new_data.push(random_number(T::zero(), T::one()));
+            i += 1;
+        }
+        Self::new(new_data.into_boxed_slice(), dim, device, requires_grad)
+    }
+    ///
+    /// Generate a tensor with random values from a uniform distribution.
+    ///
+    /// # Arguments
+    ///
+    /// * `dim` - The dimensions of the tensor.
+    /// * `low` - The lower bound of the uniform distribution.
+    /// * `high` - The upper bound of the uniform distribution.
+    /// * `device` - The device to store the tensor on.
+    /// * `requires_grad` - Whether or not the tensor requires gradients.
+    pub fn uniform(
+        dim: Dimensions,
+        low: T,
+        high: T,
+        device: Option<Device>,
+        requires_grad: Option<bool>
+    ) -> Self {
+        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+        let mut i: usize = 0;
+        while i < dim.0 * dim.1 {
+            new_data.push(random_number(low, high));
+            i += 1;
+        }
+        Self::new(new_data.into_boxed_slice(), dim, device, requires_grad)
     }
 }
 
