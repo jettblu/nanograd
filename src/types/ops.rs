@@ -1,21 +1,12 @@
 pub enum UnaryOps {
     EXP2,
-    NOOP,
-    LOG2,
-    CAST,
-    SIN,
-    SQRT,
-    RECIP,
+    Tanh,
 }
 
 pub enum BinaryOps {
     ADD,
     SUB,
     MUL,
-    DIV,
-    MAX,
-    MOD,
-    CMPLT,
 }
 
 pub enum ReduceOps {
@@ -28,15 +19,6 @@ pub enum TernaryOps {
     WHERE,
 }
 
-pub enum MovementOps {
-    RESHAPE,
-    PERMUTE,
-    EXPAND,
-    PAD,
-    SHRINK,
-    STRIDE,
-}
-
 pub enum LoadOps {
     EMPTY,
     RAND,
@@ -44,4 +26,12 @@ pub enum LoadOps {
     FROM,
     CONTIGUOUS,
     CUSTOM,
+}
+
+pub enum Ops {
+    UnaryOps,
+    BinaryOps,
+    ReduceOps,
+    TernaryOps,
+    LoadOps,
 }

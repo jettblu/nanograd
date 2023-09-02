@@ -9,6 +9,7 @@ use crate::DataArray;
 use crate::Device;
 use crate::Dimensions;
 use crate::LazyBuffer;
+use crate::Ops;
 use crate::TensorTrait;
 use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
@@ -17,6 +18,8 @@ use crate::random_number;
 pub struct Tensor<T: TensorTrait<T>> {
     lazy_data: LazyBuffer<T>,
     requires_grad: bool,
+    op: Option<Ops>,
+    // prev: Option<&Tensor<T>>,
 }
 
 impl<T> Tensor<T> where T: TensorTrait<T> {
@@ -31,9 +34,8 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             Some(requires_grad) => requires_grad,
             None => false,
         };
-        let new_array: [[u8; 10]; 20] = [[0; 10]; 20];
         let lazy_data: LazyBuffer<T> = LazyBuffer::new(data, dimensions, device);
-        Self { lazy_data, requires_grad }
+        Self { lazy_data, requires_grad, op: None }
     }
     // get dimensions
     pub fn dim(&self) -> Dimensions {
