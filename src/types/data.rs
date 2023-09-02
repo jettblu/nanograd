@@ -1,19 +1,5 @@
 use crate::{ TensorTrait, Device, default_device };
 
-pub enum DType {
-    float32,
-    float64,
-    int32,
-    int64,
-    uint32,
-    uint64,
-    bool,
-}
-
-pub fn default_data_type() -> DType {
-    DType::float32
-}
-
 pub struct LazyBuffer<T: TensorTrait<T>> {
     data: DataArray<T>,
     dimensions: Dimensions,
