@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
 use std::ops::Sub;
+use std::ops::Neg;
 use std::vec;
 
 use crate::DataArray;
@@ -103,6 +104,14 @@ impl<T> Sub<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
     type Output = Tensor<T>;
     fn sub(self, other: Tensor<T>) -> Tensor<T> {
         sub(&self, &other)
+    }
+}
+
+// support negation
+impl<T> Neg for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn neg(self) -> Tensor<T> {
+        neg(&self)
     }
 }
 
@@ -239,24 +248,8 @@ fn mul<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
     Tensor::new(new_data, new_dim, None, None)
 }
 
-fn neg<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
-    // make sure dimensions match
-    let a_dim: Dimensions = a.dim();
-    let b_dim: Dimensions = b.dim();
-    // can only add tensors of same dimensions
-    assert_eq!(a_dim, b_dim);
-    let array_len = a_dim.0 * a_dim.1;
-    let mut new_data = Vec::with_capacity(a_dim.0 * a_dim.1);
-    let mut i: usize = 0;
-    let a_data = a.data();
-    let b_data = b.data();
-    while i < array_len {
-        new_data.push(a_data[i] - b_data[i]);
-        i += 1;
-    }
-    // create Box<[T]> from Vec<T>
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
-    Tensor::new(new_data, a_dim, None, None)
+fn neg<T: TensorTrait<T>>(a: &Tensor<T>) -> Tensor<T> {
+    a * &(T::zero() - T::one())
 }
 
 fn sub<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
