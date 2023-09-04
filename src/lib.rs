@@ -17,9 +17,9 @@ mod types;
 pub use crate::types::device::Device;
 pub use crate::types::device::default_device;
 pub use crate::types::ops::Ops;
-pub use crate::types::data::Dimensions;
-pub use crate::types::data::LazyBuffer;
-pub use crate::types::data::DataArray;
+pub use crate::types::lazy::Dimensions;
+pub use crate::types::lazy::LazyBuffer;
+pub use crate::types::lazy::DataArray;
 
 mod traits;
 pub use crate::traits::TensorTrait;

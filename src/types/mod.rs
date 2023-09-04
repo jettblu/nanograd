@@ -4,4 +4,4 @@ pub mod device;
 
 pub mod ops;
 
-pub mod data;
+pub mod lazy;
