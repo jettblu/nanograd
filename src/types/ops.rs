@@ -29,9 +29,9 @@ pub enum LoadOps {
 }
 
 pub enum Ops {
-    UnaryOps,
-    BinaryOps,
-    ReduceOps,
-    TernaryOps,
-    LoadOps,
+    UnaryOps(UnaryOps),
+    BinaryOps(BinaryOps),
+    ReduceOps(ReduceOps),
+    TernaryOps(TernaryOps),
+    LoadOps(LoadOps),
 }
