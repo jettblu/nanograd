@@ -1,9 +1,11 @@
+use std::borrow::BorrowMut;
+use std::f32::consts::E;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
 use std::ops::Sub;
-use std::ops::Neg;
 use std::vec;
+use std::hash::Hash;
 
 use crate::DataArray;
 use crate::Device;
@@ -11,37 +13,157 @@ use crate::Dimensions;
 use crate::LazyBuffer;
 use crate::Ops;
 use crate::TensorTrait;
+use crate::backward_helper;
 use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
 use crate::random_number;
+use crate::types::ops::BinaryOps;
+use crate::types::ops::UnaryOps;
 
+#[derive(Clone, Eq, PartialEq)]
 pub struct Tensor<T: TensorTrait<T>> {
     lazy_data: LazyBuffer<T>,
     requires_grad: bool,
-    op: Option<Ops>,
-    // prev: Option<&Tensor<T>>,
+    pub op: Ops,
+    // array of parents
+    pub prev: Option<Box<Vec<Tensor<T>>>>,
+    pub gradient: Option<Box<Tensor<T>>>,
+    pub unique_id: i32,
+}
+
+// implement hash trait for tensor struct
+impl<T> Hash for Tensor<T> where T: TensorTrait<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.lazy_data.hash(state);
+        self.requires_grad.hash(state);
+        self.op.hash(state);
+        self.prev.hash(state);
+        self.gradient.hash(state);
+    }
 }
 
 impl<T> Tensor<T> where T: TensorTrait<T> {
-    // new tensor
+    /// Create a new tensor.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The data of the tensor. Stored as a boxed slice of type T.
+    /// * `dimensions` - The dimensions of the tensor.
+    /// * `device` - The device to store the tensor on. Currently unused.
+    /// * `requires_grad` - Whether or not the tensor requires gradients. This should be true if tensor is involved in neural network.
+    ///
+    /// # Panics
+    ///
+    /// * If data length does not match dimensions.
+    /// * If unable to convert random number to i32 when generating unique id.
     pub fn new(
         data: DataArray<T>,
         dimensions: Dimensions,
         device: Option<Device>,
         requires_grad: Option<bool>
     ) -> Self {
+        if data.len() != dimensions.0 * dimensions.1 {
+            panic!("Data length does not match dimensions");
+        }
         let requires_grad = match requires_grad {
             Some(requires_grad) => requires_grad,
             None => false,
         };
         let lazy_data: LazyBuffer<T> = LazyBuffer::new(data, dimensions, device);
-        Self { lazy_data, requires_grad, op: None }
+        let new_op = Ops::None;
+        // create unique id
+        let rand_id = random_number(T::zero(), T::one()).to_f32();
+        let rand_id: i32 = match rand_id {
+            Some(rand_id) => (rand_id * 10000000.0) as i32,
+            None => panic!("Error converting random number to i32"),
+        };
+
+        // create gradient placeholder array
+        Self {
+            lazy_data,
+            requires_grad,
+            op: new_op,
+            prev: None,
+            gradient: requires_grad.then(|| Box::from(Tensor::zeros(dimensions, None, None))),
+            unique_id: rand_id,
+        }
     }
-    // get dimensions
+
+    /// Create a new tensor with full control over all fields. This is typically only needed for internal use.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The data of the tensor. Stored as a boxed slice of type T.
+    /// * `dimensions` - The dimensions of the tensor.
+    /// * `device` - The device to store the tensor on. Currently unused.
+    /// * `requires_grad` - Whether or not the tensor requires gradients. This should be true if tensor is involved in neural network.
+    /// * `op` - The operation that created this tensor.
+    /// * `prev` - The previous tensors that were used to create this tensor.
+    pub fn _build_raw(
+        data: DataArray<T>,
+        dimensions: Dimensions,
+        device: Option<Device>,
+        requires_grad: Option<bool>,
+        op: Option<Ops>,
+        prev: Option<Vec<Tensor<T>>>
+    ) -> Tensor<T> {
+        Self::new_internal(data, dimensions, device, requires_grad, op, prev)
+    }
+
+    fn new_internal(
+        data: DataArray<T>,
+        dimensions: Dimensions,
+        device: Option<Device>,
+        requires_grad: Option<bool>,
+        op: Option<Ops>,
+        prev: Option<Vec<Tensor<T>>>
+    ) -> Self {
+        if data.len() != dimensions.0 * dimensions.1 {
+            panic!("Data length does not match dimensions");
+        }
+        let requires_grad = match requires_grad {
+            Some(requires_grad) => requires_grad,
+            None => false,
+        };
+        let lazy_data: LazyBuffer<T> = LazyBuffer::new(data, dimensions, device);
+        let new_op = match op {
+            Some(op) => op,
+            None => Ops::None,
+        };
+        let new_prev = match prev {
+            Some(prev) => prev,
+            None => vec![],
+        };
+        let rand_id = random_number(T::zero(), T::one()).to_f32();
+        // create unique id
+        let rand_id: i32 = match rand_id {
+            Some(rand_id) => (rand_id * 10000000.0) as i32,
+            None => panic!("Error converting random number to i32"),
+        };
+        Self {
+            lazy_data,
+            requires_grad,
+            op: new_op,
+            prev: Some(Box::new(new_prev)),
+            gradient: None,
+            unique_id: rand_id,
+        }
+    }
+
+    /// Get dimensions of tensor
+    ///
+    /// # Returns
+    ///
+    /// * `dimensions` - The dimensions of the tensor.
+    ///
     pub fn dim(&self) -> Dimensions {
         self.lazy_data.dim()
     }
-    // get data
+    /// Get data of tensor
+    ///
+    /// # Returns
+    ///
+    /// * `data` - The data of the tensor. Stored as a boxed slice of type T.
     pub fn data(&self) -> &DataArray<T> {
         self.lazy_data.data()
     }
@@ -127,120 +249,62 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         }
         Self::new(new_data.into_boxed_slice(), dim, device, requires_grad)
     }
-}
 
-impl<T> Add<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn add(self, other: Tensor<T>) -> Tensor<T> {
-        add(&self, &other)
+    /// Set gradient of tensor
+    ///
+    /// # Arguments
+    ///
+    /// * `gradient` - The gradient to set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nanograd::Tensor;
+    ///
+    /// let mut tensor = Tensor::ones((2, 2), None, None);
+    /// tensor.set_gradient(Tensor::zeros((2, 2), None, None));
+    /// ```
+    ///
+    pub fn set_gradient(&mut self, gradient: Tensor<T>) {
+        self.gradient = Some(Box::from(gradient));
     }
-}
 
-// support adding ref to ref
-impl<'a, T> Add<&'a Tensor<T>> for &'a Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn add(self, other: &'a Tensor<T>) -> Tensor<T> {
-        add(self, other)
+    /// Get gradient of tensor
+    ///
+    /// # Returns
+    ///
+    /// * `gradient` - The gradient of the tensor. May be None.
+    pub fn get_gradient(&self) -> &Option<Box<Tensor<T>>> {
+        &self.gradient
     }
-}
 
-// supoort subtraction
-impl<T> Sub<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn sub(self, other: Tensor<T>) -> Tensor<T> {
-        sub(&self, &other)
-    }
-}
-
-// support negation
-impl<T> Neg for Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn neg(self) -> Tensor<T> {
-        neg(&self)
-    }
-}
-
-// support subtracting ref to ref
-impl<'a, T> Sub<&'a Tensor<T>> for &'a Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn sub(self, other: &'a Tensor<T>) -> Tensor<T> {
-        sub(self, other)
-    }
-}
-
-impl<T> Mul<T> for Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn mul(self, other: T) -> Tensor<T> {
-        let dim: Dimensions = self.dim();
-        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-        let mut i: usize = 0;
-        let self_data = self.data();
-        while i < dim.0 * dim.1 {
-            new_data.push(self_data[i] * other);
-            i += 1;
+    /// Compute backward pass of tensor and its parents. This will update each parent's gradient.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nanograd::Tensor;
+    ///
+    /// let mut tensor = Tensor::ones((2, 2), None, None);
+    /// tensor.backward();
+    /// ```
+    ///
+    pub fn backward(&mut self) {
+        // check if requires grad
+        if !self.requires_grad {
+            return;
         }
-        // create Box<[T]> from Vec<T>
-        let new_data: DataArray<T> = new_data.into_boxed_slice();
-        Tensor::new(new_data, dim, None, None)
+        let mut new_visited: Vec<i32> = Vec::new();
+        // fill gradient with ones
+        self.set_gradient(Tensor::ones(self.dim(), None, None));
+        // run backward pass
+        backward_helper(&mut new_visited, self)
     }
 }
 
-// support multiplying ref to ref
-impl<'a, T> Mul<&'a T> for &'a Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn mul(self, other: &'a T) -> Tensor<T> {
-        let dim: Dimensions = self.dim();
-        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-        let mut i: usize = 0;
-        let self_data = self.data();
-        while i < dim.0 * dim.1 {
-            new_data.push(self_data[i] * *other);
-            i += 1;
-        }
-        // create Box<[T]> from Vec<T>
-        let new_data: DataArray<T> = new_data.into_boxed_slice();
-        Tensor::new(new_data, dim, None, None)
-    }
-}
-
-// support mutltipying
-impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn mul(self, other: Tensor<T>) -> Tensor<T> {
-        mul(&self, &other)
-    }
-}
-
-// supporting multiplying ref to ref
-impl<'a, T> Mul<&'a Tensor<T>> for &'a Tensor<T> where T: TensorTrait<T> {
-    type Output = Tensor<T>;
-    fn mul(self, other: &'a Tensor<T>) -> Tensor<T> {
-        mul(self, other)
-    }
-}
-
-// implement display trait for lazy buffer
-impl<T> fmt::Display for Tensor<T> where T: TensorTrait<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // diplay array as matrix
-        let dim: Dimensions = self.dim();
-        let mut i: usize = 0;
-        write!(f, "Tensor ({:} by {:}):\n", dim.0, dim.1)?;
-        while i < dim.0 {
-            let mut j: usize = 0;
-            while j < dim.1 {
-                let index = i * dim.0 + j;
-                write!(f, "{:} ", self.data()[index])?;
-                j += 1;
-            }
-            write!(f, "\n")?;
-            i += 1;
-        }
-        write!(f, "\n")
-    }
-}
-
-fn add<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
+// TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
+// math helpers
+fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -257,10 +321,19 @@ fn add<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
-    Tensor::new(new_data, a_dim, None, None)
+    let mut new_tensor = Tensor::new_internal(
+        new_data,
+        a_dim,
+        None,
+        Some(true),
+        Some(Ops::BinaryOps(BinaryOps::ADD)),
+        Some(vec![a, b])
+    );
+    new_tensor.set_gradient(Tensor::zeros(a_dim, None, None));
+    new_tensor
 }
 
-fn mul<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
+fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -290,14 +363,19 @@ fn mul<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
     let new_dim: Dimensions = new_dimensions_after_matrix_multiplication(a_dim, b_dim);
-    Tensor::new(new_data, new_dim, None, None)
+    let mut new_tensor = Tensor::new_internal(
+        new_data,
+        new_dim,
+        None,
+        Some(true),
+        Some(Ops::BinaryOps(BinaryOps::MUL)),
+        Some(vec![a, b])
+    );
+    new_tensor.set_gradient(Tensor::zeros(new_dim, None, None));
+    new_tensor
 }
 
-fn neg<T: TensorTrait<T>>(a: &Tensor<T>) -> Tensor<T> {
-    a * &(T::zero() - T::one())
-}
-
-fn sub<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
+fn sub<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -315,5 +393,122 @@ fn sub<T: TensorTrait<T>>(a: &Tensor<T>, b: &Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
-    Tensor::new(new_data, a_dim, None, None)
+    let mut new_tensor = Tensor::new_internal(
+        new_data,
+        a_dim,
+        None,
+        Some(true),
+        Some(Ops::BinaryOps(BinaryOps::SUB)),
+        Some(vec![a, b])
+    );
+    new_tensor.set_gradient(Tensor::zeros(a_dim, None, None));
+    new_tensor
+}
+
+// addition
+impl<T> Add<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn add(self, other: Tensor<T>) -> Tensor<T> {
+        add(self, other)
+    }
+}
+
+// subtraction
+impl<T> Sub<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn sub(self, other: Tensor<T>) -> Tensor<T> {
+        sub(self, other)
+    }
+}
+
+// multiplication
+impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn mul(self, other: Tensor<T>) -> Tensor<T> {
+        mul(self, other)
+    }
+}
+
+// implement display trait for lazy buffer
+impl<T> fmt::Display for Tensor<T> where T: TensorTrait<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // diplay array as matrix
+        let dim: Dimensions = self.dim();
+        let mut i: usize = 0;
+        write!(f, "tensor( ")?;
+        while i < dim.0 {
+            let mut j: usize = 0;
+            while j < dim.1 {
+                let index = i * dim.0 + j;
+                write!(f, "{:} ", self.data()[index])?;
+                j += 1;
+            }
+            i += 1;
+            if i < dim.0 {
+                write!(f, "\n")?;
+            }
+        }
+        write!(f, ")\n")
+    }
+}
+/// Sigmoid function.
+///
+/// # Arguments
+///
+/// * `val` - The tensor to apply the sigmoid function to.
+///
+/// # Returns
+///
+/// A tensor with the sigmoid function applied to it element-wise.
+fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let dim: Dimensions = val.dim();
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let val_data = val.data();
+    let exp_typed = T::from_f32(E);
+    let exp_typed: T = match exp_typed {
+        Some(exp_typed) => exp_typed,
+        None => panic!("Error converting E to T"),
+    };
+    let one = T::one();
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(one / (one - exp_typed.pow(val_data[i])));
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let mut new_tensor = Tensor::new_internal(
+        new_data,
+        dim,
+        None,
+        Some(true),
+        Some(Ops::UnaryOps(UnaryOps::Sigmoid)),
+        Some(vec![val])
+    );
+    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+    new_tensor
+}
+
+/// Raise each value in tensor to power of val
+///
+/// # Arguments
+///
+/// * `val` - The value to raise each value in tensor to.
+pub fn exp<T: TensorTrait<T>>(base: Tensor<T>, power: T) -> Tensor<T> {
+    let dim: Dimensions = base.dim();
+    let mut i: usize = 0;
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let data: &DataArray<T> = base.data();
+    while i < dim.0 * dim.1 {
+        new_data.push(data[i].pow(power));
+        i += 1;
+    }
+    let new_data = LazyBuffer::new(new_data.into_boxed_slice(), dim, None);
+    // create and return a new tensor
+    Tensor {
+        lazy_data: new_data,
+        requires_grad: false,
+        op: Ops::UnaryOps(UnaryOps::EXP2),
+        prev: Some(Box::from(vec![base])),
+        gradient: None,
+        unique_id: 0,
+    }
 }
