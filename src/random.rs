@@ -20,7 +20,7 @@ pub fn random_number<T: TensorTrait<T>>(low: T, high: T) -> T {
     if result_num.is_err() {
         panic!("Error converting random float to tensor type.");
     }
-    let mut random_num: T = T::zero();
+    let random_num: T;
     match result_num {
         Ok(res) => {
             random_num = res;
