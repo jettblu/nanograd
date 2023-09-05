@@ -1,12 +1,12 @@
-use std::ops::{ Add, Mul, Sub };
+use std::ops::{ Add, Mul, Sub, Div };
 use std::fmt::Display;
 use std::fmt::Debug;
 
 extern crate num;
+use num::{ ToPrimitive, FromPrimitive };
+use self::num::pow::Pow;
 use self::num::traits::Zero;
 use self::num::traits::One;
-// use -1 trait
-use self::num::traits::Signed;
 
 pub trait TensorTrait<T>: Zero +
     One +
@@ -15,6 +15,10 @@ pub trait TensorTrait<T>: Zero +
     TryFrom<f64> +
     Display +
     Debug +
+    ToPrimitive +
+    FromPrimitive +
+    Pow<T, Output = T> +
+    Div<T, Output = T> +
     Add<T, Output = T> +
     Mul<T, Output = T> +
     Sub<T, Output = T> {}
@@ -29,6 +33,10 @@ impl<T> TensorTrait<T>
             TryFrom<f64> +
             Display +
             Debug +
+            ToPrimitive +
+            FromPrimitive +
+            Pow<T, Output = T> +
+            Div<T, Output = T> +
             Add<T, Output = T> +
             Mul<T, Output = T> +
             Sub<T, Output = T> {}
