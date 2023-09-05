@@ -124,8 +124,8 @@ impl Value {
                 backward_by_operation(&borrowed_value);
             }
 
-            for child_id in &value.borrow().previous {
-                self.backward_internal(visited, child_id);
+            for parent_id in &value.borrow().previous {
+                self.backward_internal(visited, parent_id);
             }
         }
     }
