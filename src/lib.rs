@@ -30,3 +30,7 @@ pub use crate::random::random_number;
 mod helpers;
 pub use crate::helpers::is_valid_matrix_multiplication;
 pub use crate::helpers::new_dimensions_after_matrix_multiplication;
+
+mod backward;
+pub use crate::backward::backward_by_operation;
+pub use crate::backward::backward_helper;
