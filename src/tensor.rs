@@ -173,6 +173,34 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     pub fn requires_grad(&self) -> &bool {
         &self.requires_grad
     }
+
+    /// Exchange rows and columns of tensor
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nanograd::Tensor;
+    ///
+    /// let data = vec![1.0, 2.0, 3.0, 4.0].into_boxed_slice();
+    /// let mut tensor = Tensor::new(data, (2, 2), None, None);
+    /// tensor.transpose();
+    ///
+    /// assert_eq!(tensor.data(), &vec![1, 3, 2, 4].into_boxed_slice());
+    /// ```
+    pub fn transpose(&mut self) {
+        let dim: Dimensions = self.dim();
+        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+        let data: &DataArray<T> = self.data();
+        for i in 0..dim.1 {
+            for j in 0..dim.0 {
+                let index = j * dim.1 + i;
+                new_data.push(data[index]);
+            }
+        }
+        let new_data: DataArray<T> = new_data.into_boxed_slice();
+        self.lazy_data = LazyBuffer::new(new_data, (dim.1, dim.0), None);
+    }
+
     pub fn full(
         dim: Dimensions,
         fill_value: T,
