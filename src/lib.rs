@@ -34,3 +34,7 @@ pub use crate::helpers::new_dimensions_after_matrix_multiplication;
 mod backward;
 pub use crate::backward::backward_by_operation;
 pub use crate::backward::backward_helper;
+
+mod nn;
+pub use crate::nn::sigmoid;
+pub use crate::nn::exp2;
