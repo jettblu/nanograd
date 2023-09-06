@@ -23,7 +23,7 @@ impl Neuron {
     /// let neuron = Neuron::new(2);
     /// ```
     pub fn new(input_count: usize) -> Neuron {
-        let mut rand_value_fn = || {
+        let rand_value_fn = || {
             let mut buffer = [0u8; 4]; // A buffer to hold the random bytes
 
             // Generate random bytes using getrandom
