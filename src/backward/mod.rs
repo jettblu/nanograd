@@ -1,3 +1,5 @@
+use std::f64::consts::E;
+
 use crate::{
     Tensor,
     TensorTrait,
@@ -38,7 +40,20 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
     // get operation
     let op = val.op;
     let parents: &mut Box<Vec<Tensor<T>>>;
-    let grad: &mut Tensor<T>;
+    let grad: &mut Box<Tensor<T>>;
+    match &mut val.gradient {
+        None => {
+            panic!("No gradient");
+        }
+        Some(t) => {
+            grad = t;
+        }
+    }
+
+    // get dimensions of gradient
+    let dim: Dimensions = grad.dim();
+    // get data
+    let grad_data: &DataArray<T> = grad.data();
     match op {
         // addition case
         Ops::BinaryOps(BinaryOps::ADD) => {
@@ -51,18 +66,6 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                     parents = t;
                 }
             }
-            match &mut val.gradient {
-                None => {
-                    panic!("No gradient");
-                }
-                Some(t) => {
-                    grad = t;
-                }
-            }
-            // get dimensions of gradient
-            let dim: Dimensions = grad.dim();
-            // get data
-            let grad_data: &DataArray<T> = grad.data();
             // iterate through grad
             let mut i: usize = 0;
             let parent_grad_1: &Box<Tensor<T>>;
@@ -84,19 +87,15 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 }
             }
             // get parent gradients
-
             let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
             let mut new_parent_grad_2: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
             let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
             let parent_grad_2_data: &DataArray<T> = parent_grad_2.data();
             while i < dim.0 * dim.1 {
-                new_parent_grad_1.push(parent_grad_1_data[i] - grad_data[i]);
-                new_parent_grad_2.push(parent_grad_2_data[i] - grad_data[i]);
+                new_parent_grad_1.push(parent_grad_1_data[i] + grad_data[i]);
+                new_parent_grad_2.push(parent_grad_2_data[i] + grad_data[i]);
                 i += 1;
             }
-            // print grads
-            println!("new_parent_grad_1: {:?}", new_parent_grad_1);
-            println!("new_parent_grad_2: {:?}", new_parent_grad_2);
             // set gradients
             parents[0].set_gradient(
                 Tensor::_build_raw(
@@ -130,14 +129,6 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                     parents = t;
                 }
             }
-            match &mut val.gradient {
-                None => {
-                    panic!("No gradient");
-                }
-                Some(t) => {
-                    grad = t;
-                }
-            }
             // get dimensions of gradient
             let dim: Dimensions = grad.dim();
             // get data
@@ -172,9 +163,6 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 new_parent_grad_2.push(parent_grad_2_data[i] - grad_data[i]);
                 i += 1;
             }
-            // print grads
-            println!("new_parent_grad_1: {:?}", new_parent_grad_1);
-            println!("new_parent_grad_2: {:?}", new_parent_grad_2);
             // set gradients
             parents[0].set_gradient(
                 Tensor::_build_raw(
@@ -204,23 +192,9 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                     panic!("No parents");
                 }
                 Some(t) => {
-                    println!("Parents:");
-                    println!("t.len(): {}", t.len());
                     parents = t;
                 }
             }
-            match &mut val.gradient {
-                None => {
-                    panic!("No gradient");
-                }
-                Some(t) => {
-                    grad = t;
-                }
-            }
-            // get dimensions of gradient
-            let dim: Dimensions = grad.dim();
-            // get data
-            let grad_data: &DataArray<T> = grad.data();
             // iterate through grad
             let parent_grad_1: &Box<Tensor<T>>;
             let parent_grad_2: &Box<Tensor<T>>;
@@ -298,18 +272,6 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                     parents = t;
                 }
             }
-            match &mut val.gradient {
-                None => {
-                    panic!("No gradient");
-                }
-                Some(t) => {
-                    grad = t;
-                }
-            }
-            // get dimensions of gradient
-            let dim: Dimensions = grad.dim();
-            // get data
-            let grad_data: &DataArray<T> = grad.data();
             // iterate through grad
             let mut i: usize = 0;
             let parent_grad_1: &Box<Tensor<T>>;
@@ -325,12 +287,19 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
             let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
             let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
             let parent_1_data: &DataArray<T> = parents[0].data();
+            let e_typed = T::from_f64(E);
+            let e_typed: T = match e_typed {
+                Some(e_typed) => e_typed,
+                None => panic!("Error converting E to T"),
+            };
             while i < dim.0 * dim.1 {
                 // sigmoid derivative
                 // sigmoid(x) * (1 - sigmoid(x))*curr grad + parent grad
+                // TODO: update to use current node's data instead of recomputing sigmoid(x)
+                let sigmoid: T =
+                    e_typed.pow(parent_1_data[i]) / (T::one() + e_typed.pow(parent_1_data[i]));
                 new_parent_grad_1.push(
-                    parent_grad_1_data[i] +
-                        grad_data[i] * parent_1_data[i] * (T::one() - parent_1_data[i])
+                    parent_grad_1_data[i] + grad_data[i] * sigmoid * (T::one() - sigmoid)
                 );
                 i += 1;
             }
@@ -346,9 +315,15 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 )
             );
         }
-        Ops::UnaryOps(UnaryOps::EXP2) => {}
-        Ops::ReduceOps(ReduceOps::MAX) => {}
-        Ops::ReduceOps(ReduceOps::SUM) => {}
+        Ops::UnaryOps(UnaryOps::EXP2) => {
+            panic!("Not implemented");
+        }
+        Ops::ReduceOps(ReduceOps::MAX) => {
+            panic!("Not implemented");
+        }
+        Ops::ReduceOps(ReduceOps::SUM) => {
+            panic!("Not implemented");
+        }
         // shouldn't need to implement these
         Ops::TernaryOps(_) => {
             panic!("Not implemented");
