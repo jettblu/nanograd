@@ -14,7 +14,7 @@ use crate::TensorTrait;
 /// ```
 /// use nanograd::random_number;
 ///
-/// let random_number:T = random_number(T::zero(), T::one());
+/// let random_number:f64 = random_number(0.0, 1.0);
 /// ```
 ///
 pub fn random_number<T: TensorTrait<T>>(low: T, high: T) -> T {

@@ -82,7 +82,7 @@ fn exp<T: TensorTrait<T>>(base: T, power: Tensor<T>) -> Tensor<T> {
 /// ```
 /// use nanograd::{ Tensor, exp2 };
 ///
-/// let tensor = Tensor::from_vec(vec![1.0, 2.0, 3.0, 4.0], (2, 2), None, None);
+/// let tensor:Tensor<f64> = Tensor::new(vec![1.0, 2.0, 3.0, 4.0].into_boxed_slice(), (2, 2), None, None);
 /// let tensor_exp2 = exp2(tensor);
 /// ```
 ///
