@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-use std::f32::consts::E;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
@@ -18,7 +16,6 @@ use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
 use crate::random_number;
 use crate::types::ops::BinaryOps;
-use crate::types::ops::UnaryOps;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Tensor<T: TensorTrait<T>> {
@@ -167,6 +164,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     pub fn data(&self) -> &DataArray<T> {
         self.lazy_data.data()
     }
+
     // get device
     pub fn device(&self) -> &Device {
         self.lazy_data.device()
@@ -297,6 +295,8 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         let mut new_visited: Vec<i32> = Vec::new();
         // fill gradient with ones
         self.set_gradient(Tensor::ones(self.dim(), None, None));
+        // print gradient of tensor
+        println!("gradient of tensor: {:}", self.get_gradient().as_ref().unwrap());
         // run backward pass
         backward_helper(&mut new_visited, self)
     }
@@ -342,13 +342,11 @@ fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     }
     let mut new_data = Vec::with_capacity(a_dim.0 * b_dim.1);
     // print new data len
-    println!("new_data.len(): {}", new_data.len());
     let a_data = a.data();
     let b_data = b.data();
     // multiply vals
     for i in 0..a_dim.0 {
         for j in 0..b_dim.1 {
-            println!("i: {}, j: {}", i, j);
             let mut sum = T::zero();
             for k in 0..b_dim.0 {
                 let index_a = i * a_dim.0 + k;
@@ -435,8 +433,12 @@ impl<T> fmt::Display for Tensor<T> where T: TensorTrait<T> {
         // diplay array as matrix
         let dim: Dimensions = self.dim();
         let mut i: usize = 0;
+        println!("\n");
         write!(f, "tensor( ")?;
         while i < dim.0 {
+            if i != 0 {
+                write!(f, "\t")?;
+            }
             let mut j: usize = 0;
             while j < dim.1 {
                 let index = i * dim.0 + j;
@@ -449,66 +451,5 @@ impl<T> fmt::Display for Tensor<T> where T: TensorTrait<T> {
             }
         }
         write!(f, ")\n")
-    }
-}
-/// Sigmoid function.
-///
-/// # Arguments
-///
-/// * `val` - The tensor to apply the sigmoid function to.
-///
-/// # Returns
-///
-/// A tensor with the sigmoid function applied to it element-wise.
-fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
-    let dim: Dimensions = val.dim();
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-    let val_data = val.data();
-    let exp_typed = T::from_f32(E);
-    let exp_typed: T = match exp_typed {
-        Some(exp_typed) => exp_typed,
-        None => panic!("Error converting E to T"),
-    };
-    let one = T::one();
-    for i in 0..dim.0 * dim.1 {
-        new_data.push(one / (one - exp_typed.pow(val_data[i])));
-    }
-    // create Box<[T]> from Vec<T>
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
-    let mut new_tensor = Tensor::new_internal(
-        new_data,
-        dim,
-        None,
-        Some(true),
-        Some(Ops::UnaryOps(UnaryOps::Sigmoid)),
-        Some(vec![val])
-    );
-    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
-    new_tensor
-}
-
-/// Raise each value in tensor to power of val
-///
-/// # Arguments
-///
-/// * `val` - The value to raise each value in tensor to.
-pub fn exp<T: TensorTrait<T>>(base: Tensor<T>, power: T) -> Tensor<T> {
-    let dim: Dimensions = base.dim();
-    let mut i: usize = 0;
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-    let data: &DataArray<T> = base.data();
-    while i < dim.0 * dim.1 {
-        new_data.push(data[i].pow(power));
-        i += 1;
-    }
-    let new_data = LazyBuffer::new(new_data.into_boxed_slice(), dim, None);
-    // create and return a new tensor
-    Tensor {
-        lazy_data: new_data,
-        requires_grad: false,
-        op: Ops::UnaryOps(UnaryOps::EXP2),
-        prev: Some(Box::from(vec![base])),
-        gradient: None,
-        unique_id: 0,
     }
 }
