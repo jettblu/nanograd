@@ -1,19 +1,19 @@
 use std::hash::Hash;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum UnaryOps {
     EXP2,
     Sigmoid,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum BinaryOps {
     ADD,
     SUB,
     MUL,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum ReduceOps {
     SUM,
     MAX,
@@ -28,7 +28,7 @@ impl Hash for ReduceOps {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TernaryOps {
     MULACC,
     WHERE,
@@ -43,7 +43,7 @@ impl Hash for TernaryOps {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum LoadOps {
     EMPTY,
     RAND,
@@ -75,7 +75,7 @@ impl Hash for UnaryOps {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Ops {
     UnaryOps(UnaryOps),
     BinaryOps(BinaryOps),
