@@ -185,7 +185,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// let mut tensor = Tensor::new(data, (2, 2), None, None);
     /// tensor.transpose();
     ///
-    /// assert_eq!(tensor.data(), &vec![1, 3, 2, 4].into_boxed_slice());
+    /// assert_eq!(tensor.data(), &vec![1.0, 3.0, 2.0, 4.0].into_boxed_slice());
     /// ```
     pub fn transpose(&mut self) {
         let dim: Dimensions = self.dim();
@@ -199,6 +199,37 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         }
         let new_data: DataArray<T> = new_data.into_boxed_slice();
         self.lazy_data = LazyBuffer::new(new_data, (dim.1, dim.0), None);
+    }
+
+    /// Compute sum of all elements in tensor
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nanograd::Tensor;
+    ///
+    /// let data = vec![1.0, 2.0, 3.0, 4.0].into_boxed_slice();
+    ///
+    /// let tensor = Tensor::new(data, (2, 2), None, None);
+    /// let sum = tensor.sum();
+    ///
+    /// assert_eq!(sum, 10.0);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `sum` - The sum of all elements in tensor.
+    pub fn sum(&self) -> T {
+        let dim: Dimensions = self.dim();
+        let mut sum = T::zero();
+        let data: &DataArray<T> = self.data();
+        for i in 0..dim.0 {
+            for j in 0..dim.1 {
+                let index = i * dim.1 + j;
+                sum = sum + data[index];
+            }
+        }
+        sum
     }
 
     pub fn full(
@@ -287,7 +318,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// ```
     /// use nanograd::Tensor;
     ///
-    /// let mut tensor = Tensor::ones((2, 2), None, None);
+    /// let mut tensor:Tensor<f64> = Tensor::ones((2, 2), None, None);
     /// tensor.set_gradient(Tensor::zeros((2, 2), None, None));
     /// ```
     ///
@@ -311,7 +342,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// ```
     /// use nanograd::Tensor;
     ///
-    /// let mut tensor = Tensor::ones((2, 2), None, None);
+    /// let mut tensor:Tensor<f64> = Tensor::ones((2, 2), None, None);
     /// tensor.backward();
     /// ```
     ///
