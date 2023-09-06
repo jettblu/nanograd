@@ -1,4 +1,5 @@
 use crate::{ TensorTrait, Device, default_device };
+use core::panic;
 use std::hash::Hash;
 
 #[derive(Clone, PartialEq, Eq)]
@@ -45,5 +46,10 @@ pub type DataArray<T> = Box<[T]>;
 pub type Dimensions = (usize, usize);
 
 impl<T> Hash for LazyBuffer<T> where T: TensorTrait<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {}
+    // TODO: IMPLEMENT AND REMOVE UNUSED VARIABLES WARNING SKIRT
+    #[allow(unused_variables)]
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        println!("TODO: implement hash for LazyBuffer<T> where T: TensorTrait<T>");
+        panic!("Not implemented");
+    }
 }
