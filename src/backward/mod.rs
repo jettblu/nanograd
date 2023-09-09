@@ -1,4 +1,4 @@
-use std::f64::consts::E;
+use std::{ f64::consts::E, borrow::BorrowMut };
 
 use crate::{
     Tensor,
@@ -272,6 +272,7 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                     parents = t;
                 }
             }
+            let curr_data = val.lazy_data.data();
             // iterate through grad
             let mut i: usize = 0;
             let parent_grad_1: &Box<Tensor<T>>;
@@ -286,18 +287,11 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
             // get parent gradients
             let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
             let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
-            let parent_1_data: &DataArray<T> = parents[0].data();
-            let e_typed = T::from_f64(E);
-            let e_typed: T = match e_typed {
-                Some(e_typed) => e_typed,
-                None => panic!("Error converting E to T"),
-            };
             while i < dim.0 * dim.1 {
                 // sigmoid derivative
                 // sigmoid(x) * (1 - sigmoid(x))*curr grad + parent grad
                 // TODO: update to use current node's data instead of recomputing sigmoid(x)
-                let sigmoid: T =
-                    e_typed.pow(parent_1_data[i]) / (T::one() + e_typed.pow(parent_1_data[i]));
+                let sigmoid: T = curr_data[i];
                 new_parent_grad_1.push(
                     parent_grad_1_data[i] + grad_data[i] * sigmoid * (T::one() - sigmoid)
                 );
@@ -316,7 +310,48 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
             );
         }
         Ops::UnaryOps(UnaryOps::EXP2) => {
-            panic!("Not implemented");
+            // gradient flows through exp2
+            match &mut val.prev {
+                None => {
+                    panic!("No parents");
+                }
+                Some(t) => {
+                    parents = t;
+                }
+            }
+            let curr_data = val.lazy_data.data();
+            // iterate through grad
+            let mut i: usize = 0;
+            let parent_grad_1: &Box<Tensor<T>>;
+            match parents[0].get_gradient() {
+                None => {
+                    panic!("No gradient");
+                }
+                Some(t) => {
+                    parent_grad_1 = t;
+                }
+            }
+            // get parent gradients
+            let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
+            let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
+            while i < dim.0 * dim.1 {
+                // exp2 derivative
+                // exp2(x) * curr grad + parent grad
+                let new_val = curr_data[i] * grad_data[i] + parent_grad_1_data[i];
+                new_parent_grad_1.push(new_val);
+                i += 1;
+            }
+            // set gradients
+            parents[0].set_gradient(
+                Tensor::_build_raw(
+                    new_parent_grad_1.into_boxed_slice(),
+                    (dim.0.clone(), dim.1.clone()),
+                    None,
+                    None,
+                    None,
+                    None
+                )
+            );
         }
         Ops::ReduceOps(ReduceOps::MAX) => {
             panic!("Not implemented");
