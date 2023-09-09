@@ -19,7 +19,7 @@ use crate::types::ops::BinaryOps;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Tensor<T: TensorTrait<T>> {
-    lazy_data: LazyBuffer<T>,
+    pub lazy_data: LazyBuffer<T>,
     requires_grad: bool,
     pub op: Ops,
     // array of parents
