@@ -36,5 +36,8 @@ pub use crate::backward::backward_by_operation;
 pub use crate::backward::backward_helper;
 
 mod nn;
-pub use crate::nn::sigmoid;
-pub use crate::nn::exp2;
+pub use crate::nn::activation::sigmoid;
+pub use crate::nn::activation::relu;
+pub use crate::nn::activation::leaky_relu;
+pub use crate::nn::transformation::exp2;
+pub use crate::nn::linear::Linear;
