@@ -359,6 +359,26 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         // run backward pass
         backward_helper(&mut new_visited, self)
     }
+
+    pub fn max(&self, other: T) -> Tensor<T> {
+        let dim: Dimensions = self.dim();
+        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+        let data: &DataArray<T> = self.data();
+        for i in 0..dim.0 * dim.1 {
+            new_data.push(if data[i] > other { data[i] } else { other });
+        }
+        let new_data: DataArray<T> = new_data.into_boxed_slice();
+        let mut new_tensor = Tensor::_build_raw(
+            new_data,
+            dim,
+            None,
+            Some(true),
+            Some(Ops::BinaryOps(BinaryOps::MAX)),
+            Some(vec![self.clone()])
+        );
+        new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+        new_tensor
+    }
 }
 
 // TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
@@ -483,6 +503,31 @@ impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
     type Output = Tensor<T>;
     fn mul(self, other: Tensor<T>) -> Tensor<T> {
         mul(self, other)
+    }
+}
+
+// TODO: CHECK WHAT NODES SHOULD BE ADDED AS PARENTS AND WHAT GRADIENT SHOULD BE
+// multiplication by scalar
+impl<T> Mul<T> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn mul(self, other: T) -> Tensor<T> {
+        let dim: Dimensions = self.dim();
+        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+        let data: &DataArray<T> = self.data();
+        for i in 0..dim.0 * dim.1 {
+            new_data.push(data[i] * other);
+        }
+        let new_data: DataArray<T> = new_data.into_boxed_slice();
+        let mut new_tensor = Tensor::_build_raw(
+            new_data,
+            dim,
+            None,
+            Some(true),
+            Some(Ops::BinaryOps(BinaryOps::MUL)),
+            Some(vec![self])
+        );
+        new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+        new_tensor
     }
 }
 
