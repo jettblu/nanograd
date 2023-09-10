@@ -11,6 +11,7 @@ pub enum BinaryOps {
     ADD,
     SUB,
     MUL,
+    MAX,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -91,6 +92,7 @@ impl Hash for BinaryOps {
             BinaryOps::ADD => (13).hash(state),
             BinaryOps::SUB => (14).hash(state),
             BinaryOps::MUL => (15).hash(state),
+            BinaryOps::MAX => (16).hash(state),
         }
     }
 }
