@@ -18,7 +18,7 @@ impl Neuron {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::neuron::Neuron;
+    /// use nanograd::Neuron;
     ///
     /// let neuron = Neuron::new(2);
     /// ```
@@ -63,8 +63,8 @@ impl Neuron {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::neuron::Neuron;
-    /// use nanograd::value::Value;
+    /// use nanograd::Neuron;
+    /// use nanograd::Value;
     ///
     /// let neuron = Neuron::new(2);
     /// let a = Value::from(1.0);
@@ -95,7 +95,7 @@ impl Neuron {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::neuron::Neuron;
+    /// use nanograd::Neuron;
     ///
     /// let neuron = Neuron::new(2);
     /// let params = neuron.parameters();

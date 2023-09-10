@@ -17,7 +17,7 @@ impl Layer {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::layer::Layer;
+    /// use nanograd::Layer;
     ///
     /// let layer = Layer::new(2, 1);
     /// ```
@@ -37,8 +37,8 @@ impl Layer {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::layer::Layer;
-    /// use nanograd::value::Value;
+    /// use nanograd::Layer;
+    /// use nanograd::Value;
     ///
     /// let layer = Layer::new(2, 1);
     /// let a = Value::from(1.0);
@@ -58,7 +58,7 @@ impl Layer {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::layer::Layer;
+    /// use nanograd::Layer;
     ///
     /// let layer = Layer::new(2, 1);
     /// let params = layer.parameters();

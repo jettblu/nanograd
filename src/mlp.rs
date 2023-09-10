@@ -20,7 +20,7 @@ impl MLP {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::mlp::MLP;
+    /// use nanograd::MLP;
     ///
     /// let mlp = MLP::new(2, vec![1]);
     /// ```
@@ -45,10 +45,11 @@ impl MLP {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::mlp::MLP;
+    /// use nanograd::MLP;
+    /// use nanograd::Value;
     ///
     /// let mlp = MLP::new(2, vec![1]);
-    /// let a = vec![1.0, 2.0];
+    /// let a = vec![Value::from(1.0), Value::from(2.0)];
     /// let b = mlp.forward(a);
     /// ```
     ///
@@ -64,7 +65,7 @@ impl MLP {
     /// # Examples
     ///
     /// ```
-    /// use nanograd::mlp::MLP;
+    /// use nanograd::MLP;
     ///
     /// let mlp = MLP::new(2, vec![1]);
     /// let params = mlp.parameters();
