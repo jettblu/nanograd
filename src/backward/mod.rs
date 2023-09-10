@@ -261,6 +261,42 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 )
             );
         }
+        // max case
+        Ops::BinaryOps(BinaryOps::MAX) => {
+            // 1s where max, 0s otherwise
+            // gradient flows through max
+            match &mut val.prev {
+                None => {
+                    panic!("No parents");
+                }
+                Some(t) => {
+                    parents = t;
+                }
+            }
+            // iterate through grad
+            let mut i: usize = 0;
+            let parent_grad_1: &Box<Tensor<T>>;
+            let grad_data = grad.data();
+            match parents[0].get_gradient() {
+                None => {
+                    panic!("No gradient");
+                }
+                Some(t) => {
+                    parent_grad_1 = t;
+                }
+            }
+            // get parent gradients
+            let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
+            let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
+            let zero = T::zero();
+            while i < dim.0 * dim.1 {
+                // max derivative
+                // 1 if max, 0 otherwise
+                let new_val = if parent_grad_1_data[i] != zero { T::one() } else { T::zero() };
+                new_parent_grad_1.push(new_val * grad_data[i]);
+                i += 1;
+            }
+        }
         // unary ops
         Ops::UnaryOps(UnaryOps::Sigmoid) => {
             // gradient flows through sigmoid
