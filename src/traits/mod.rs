@@ -1,6 +1,7 @@
 use std::ops::{ Add, Mul, Sub, Div };
 use std::fmt::Display;
 use std::fmt::Debug;
+use std::cmp::PartialOrd;
 
 extern crate num;
 use num::{ ToPrimitive, FromPrimitive };
@@ -17,6 +18,7 @@ pub trait TensorTrait<T>: Zero +
     Debug +
     ToPrimitive +
     FromPrimitive +
+    PartialOrd +
     Pow<T, Output = T> +
     Div<T, Output = T> +
     Add<T, Output = T> +
@@ -35,6 +37,7 @@ impl<T> TensorTrait<T>
             Debug +
             ToPrimitive +
             FromPrimitive +
+            PartialOrd +
             Pow<T, Output = T> +
             Div<T, Output = T> +
             Add<T, Output = T> +
