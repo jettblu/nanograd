@@ -6,6 +6,7 @@ pub enum UnaryOps {
     Sigmoid,
     MAX,
     LOG2,
+    SUM,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
