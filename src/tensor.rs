@@ -1,3 +1,4 @@
+use core::panic;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
@@ -511,6 +512,8 @@ impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
 impl<T> Mul<T> for Tensor<T> where T: TensorTrait<T> {
     type Output = Tensor<T>;
     fn mul(self, other: T) -> Tensor<T> {
+        // panic for now while we figure out how to implement this
+        panic!("Not implemented");
         let dim: Dimensions = self.dim();
         let mut new_data = Vec::with_capacity(dim.0 * dim.1);
         let data: &DataArray<T> = self.data();

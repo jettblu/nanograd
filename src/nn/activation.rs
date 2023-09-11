@@ -1,3 +1,4 @@
+use core::panic;
 use std::f32::consts::E;
 
 use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops };
@@ -45,6 +46,8 @@ pub fn relu<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 }
 
 pub fn leaky_relu<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    // not implemented for now since backward op is not defined
+    panic!("Not implemented");
     let alpha: Option<T> = T::from_f32(-0.01);
     let alpha: T = match alpha {
         Some(alpha) => alpha,
