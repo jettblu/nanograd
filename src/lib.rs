@@ -41,3 +41,4 @@ pub use crate::nn::activation::relu;
 pub use crate::nn::activation::leaky_relu;
 pub use crate::nn::transformation::exp2;
 pub use crate::nn::linear::Linear;
+pub use crate::nn::loss::categorical_cross_entropy;
