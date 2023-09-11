@@ -52,3 +52,65 @@ fn exp<T: TensorTrait<T>>(base: T, power: Tensor<T>) -> Tensor<T> {
 pub fn exp2<T: TensorTrait<T>>(power: Tensor<T>) -> Tensor<T> {
     exp(T::from_f32(2.0).unwrap(), power)
 }
+
+pub fn max<T: TensorTrait<T>>(val: Tensor<T>, other: T) -> Tensor<T> {
+    let dim: Dimensions = val.dim();
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let data: &DataArray<T> = val.data();
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(if data[i] > other { data[i] } else { other });
+    }
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let mut new_tensor = Tensor::_build_raw(
+        new_data,
+        dim,
+        None,
+        Some(true),
+        Some(Ops::UnaryOps(UnaryOps::MAX)),
+        Some(vec![val])
+    );
+    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+    new_tensor
+}
+
+pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let dim: Dimensions = val.dim();
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let data: &DataArray<T> = val.data();
+    let two = T::one() + T::one();
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(data[i].log2());
+    }
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let mut new_tensor = Tensor::_build_raw(
+        new_data,
+        dim,
+        None,
+        Some(true),
+        Some(Ops::UnaryOps(UnaryOps::LOG2)),
+        Some(vec![val])
+    );
+    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+    new_tensor
+}
+
+pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let dim: Dimensions = val.dim();
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let data: &DataArray<T> = val.data();
+    let mut sum = T::zero();
+    for i in 0..dim.0 * dim.1 {
+        sum = sum + data[i];
+    }
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let mut new_tensor = Tensor::_build_raw(
+        new_data,
+        dim,
+        None,
+        Some(true),
+        Some(Ops::UnaryOps(UnaryOps::SUM)),
+        Some(vec![val.clone()])
+    );
+    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+    new_tensor
+}

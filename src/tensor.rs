@@ -350,26 +350,6 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         // run backward pass
         backward_helper(&mut new_visited, self)
     }
-
-    pub fn max(&self, other: T) -> Tensor<T> {
-        let dim: Dimensions = self.dim();
-        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-        let data: &DataArray<T> = self.data();
-        for i in 0..dim.0 * dim.1 {
-            new_data.push(if data[i] > other { data[i] } else { other });
-        }
-        let new_data: DataArray<T> = new_data.into_boxed_slice();
-        let mut new_tensor = Tensor::_build_raw(
-            new_data,
-            dim,
-            None,
-            Some(true),
-            Some(Ops::UnaryOps(UnaryOps::MAX)),
-            Some(vec![self.clone()])
-        );
-        new_tensor.set_gradient(Tensor::zeros(dim, None, None));
-        new_tensor
-    }
 }
 
 // TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
