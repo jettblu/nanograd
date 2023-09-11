@@ -261,8 +261,7 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 )
             );
         }
-        // max case
-        Ops::BinaryOps(BinaryOps::MAX) => {
+        Ops::UnaryOps(UnaryOps::MAX) => {
             // 1s where max, 0s otherwise
             // gradient flows through max
             match &mut val.prev {
