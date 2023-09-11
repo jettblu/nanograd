@@ -4,7 +4,6 @@ use std::ops::Add;
 use std::ops::Mul;
 use std::ops::Sub;
 use std::vec;
-use std::hash::Hash;
 
 use crate::DataArray;
 use crate::Device;
@@ -17,7 +16,6 @@ use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
 use crate::random_number;
 use crate::types::ops::BinaryOps;
-use crate::types::ops::UnaryOps;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Tensor<T: TensorTrait<T>> {
