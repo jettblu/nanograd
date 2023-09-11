@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::cmp::PartialOrd;
 
 extern crate num;
-use num::{ ToPrimitive, FromPrimitive };
+use num::{ ToPrimitive, FromPrimitive, Float };
 use self::num::pow::Pow;
 use self::num::traits::Zero;
 use self::num::traits::One;
@@ -19,6 +19,7 @@ pub trait TensorTrait<T>: Zero +
     ToPrimitive +
     FromPrimitive +
     PartialOrd +
+    Float +
     Pow<T, Output = T> +
     Div<T, Output = T> +
     Add<T, Output = T> +
@@ -38,6 +39,7 @@ impl<T> TensorTrait<T>
             ToPrimitive +
             FromPrimitive +
             PartialOrd +
+            Float +
             Pow<T, Output = T> +
             Div<T, Output = T> +
             Add<T, Output = T> +
