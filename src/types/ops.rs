@@ -4,6 +4,8 @@ use std::hash::Hash;
 pub enum UnaryOps {
     EXP2,
     Sigmoid,
+    MAX,
+    LOG2,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -11,7 +13,6 @@ pub enum BinaryOps {
     ADD,
     SUB,
     MUL,
-    MAX,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -67,15 +68,6 @@ impl Hash for LoadOps {
     }
 }
 
-impl Hash for UnaryOps {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            UnaryOps::EXP2 => (11).hash(state),
-            UnaryOps::Sigmoid => (12).hash(state),
-        }
-    }
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Ops {
     UnaryOps(UnaryOps),
@@ -84,29 +76,4 @@ pub enum Ops {
     TernaryOps(TernaryOps),
     LoadOps(LoadOps),
     None,
-}
-
-impl Hash for BinaryOps {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            BinaryOps::ADD => (13).hash(state),
-            BinaryOps::SUB => (14).hash(state),
-            BinaryOps::MUL => (15).hash(state),
-            BinaryOps::MAX => (16).hash(state),
-        }
-    }
-}
-
-// implement hash trait for operation enum
-impl Hash for Ops {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            Ops::UnaryOps(op) => op.hash(state),
-            Ops::BinaryOps(op) => op.hash(state),
-            Ops::ReduceOps(op) => op.hash(state),
-            Ops::TernaryOps(op) => op.hash(state),
-            Ops::LoadOps(op) => op.hash(state),
-            Ops::None => (0).hash(state),
-        }
-    }
 }

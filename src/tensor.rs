@@ -17,6 +17,7 @@ use crate::is_valid_matrix_multiplication;
 use crate::new_dimensions_after_matrix_multiplication;
 use crate::random_number;
 use crate::types::ops::BinaryOps;
+use crate::types::ops::UnaryOps;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Tensor<T: TensorTrait<T>> {
@@ -27,17 +28,6 @@ pub struct Tensor<T: TensorTrait<T>> {
     pub prev: Option<Box<Vec<Tensor<T>>>>,
     pub gradient: Option<Box<Tensor<T>>>,
     pub unique_id: i32,
-}
-
-// implement hash trait for tensor struct
-impl<T> Hash for Tensor<T> where T: TensorTrait<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.lazy_data.hash(state);
-        self.requires_grad.hash(state);
-        self.op.hash(state);
-        self.prev.hash(state);
-        self.gradient.hash(state);
-    }
 }
 
 impl<T> Tensor<T> where T: TensorTrait<T> {
@@ -374,7 +364,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             dim,
             None,
             Some(true),
-            Some(Ops::BinaryOps(BinaryOps::MAX)),
+            Some(Ops::UnaryOps(UnaryOps::MAX)),
             Some(vec![self.clone()])
         );
         new_tensor.set_gradient(Tensor::zeros(dim, None, None));
