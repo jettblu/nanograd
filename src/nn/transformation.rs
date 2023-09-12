@@ -1,4 +1,12 @@
-use crate::{ Tensor, TensorTrait, Dimensions, DataArray, types::ops::UnaryOps, Ops };
+use crate::{
+    Tensor,
+    TensorTrait,
+    Dimensions,
+    DataArray,
+    types::ops::{ UnaryOps, ReduceOps },
+    Ops,
+    sigmoid,
+};
 
 /// Raise each value in tensor to power of val
 ///
@@ -77,7 +85,6 @@ pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
     let mut new_data = Vec::with_capacity(dim.0 * dim.1);
     let data: &DataArray<T> = val.data();
-    let two = T::one() + T::one();
     for i in 0..dim.0 * dim.1 {
         new_data.push(data[i].log2());
     }
@@ -96,20 +103,24 @@ pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 
 pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    // container for new data
+    let mut new_data = Vec::with_capacity(1);
+    // get data
     let data: &DataArray<T> = val.data();
+    // runnning sum
     let mut sum = T::zero();
     for i in 0..dim.0 * dim.1 {
         sum = sum + data[i];
     }
+    new_data.push(sum);
     let new_data: DataArray<T> = new_data.into_boxed_slice();
     let mut new_tensor = Tensor::_build_raw(
         new_data,
-        dim,
+        (1, 1),
         None,
         Some(true),
-        Some(Ops::UnaryOps(UnaryOps::SUM)),
-        Some(vec![val.clone()])
+        Some(Ops::ReduceOps(ReduceOps::SUM)),
+        Some(vec![val])
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
