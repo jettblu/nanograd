@@ -1,7 +1,7 @@
 use core::panic;
 use std::f32::consts::E;
 
-use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops };
+use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops, max };
 
 /// Sigmoid function.
 ///
@@ -42,19 +42,21 @@ pub fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 
 // relu
 pub fn relu<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
-    val.max(T::zero())
+    max(val, T::zero())
 }
 
-pub fn leaky_relu<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
-    // not implemented for now since backward op is not defined
-    panic!("Not implemented");
-    let alpha: Option<T> = T::from_f32(-0.01);
-    let alpha: T = match alpha {
-        Some(alpha) => alpha,
-        None => panic!("Error converting alpha to T"),
-    };
-    let relu_1 = val.max(T::zero());
-    let val_signs_flipped = val * alpha;
-    let output = relu_1 + val_signs_flipped;
-    output
+/// Hyperbolic tangent function.
+///
+/// # Arguments
+///
+/// * `val` - The tensor to apply the hyperbolic tangent function to.
+///
+/// # Returns
+///
+/// A tensor with the hyperbolic tangent function applied to it element-wise.
+///
+fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let one: T = T::one();
+    let two: T = one + one;
+    sigmoid(val * two) * two - one
 }
