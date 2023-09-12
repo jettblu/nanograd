@@ -56,7 +56,7 @@ pub fn relu<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 ///
 /// A tensor with the hyperbolic tangent function applied to it element-wise.
 ///
-fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+pub fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let one: T = T::one();
     let two: T = one + one;
     sigmoid(val * two) * two - one
