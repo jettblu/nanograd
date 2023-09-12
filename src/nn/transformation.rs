@@ -1,3 +1,5 @@
+use std::f64::consts::E;
+
 use crate::{ Tensor, TensorTrait, Dimensions, DataArray, types::ops::{ UnaryOps, ReduceOps }, Ops };
 
 /// Raise each value in tensor to power of val
@@ -7,7 +9,9 @@ use crate::{ Tensor, TensorTrait, Dimensions, DataArray, types::ops::{ UnaryOps,
 /// * `val` - The value to raise each value in tensor to.
 fn exp<T: TensorTrait<T>>(base: T, power: Tensor<T>) -> Tensor<T> {
     // throw not implemented for now, since backward op is not defined
-    panic!("Not implemented");
+    if base != T::from_f32(2.0).unwrap() {
+        panic!("Not implemented for bases other than 2.0");
+    }
     let dim: Dimensions = power.dim();
     let mut i: usize = 0;
     let mut new_data = Vec::with_capacity(dim.0 * dim.1);
@@ -43,7 +47,7 @@ fn exp<T: TensorTrait<T>>(base: T, power: Tensor<T>) -> Tensor<T> {
 /// # Examples
 ///
 /// ```
-/// use nanograd::{ Tensor, exp2 };
+/// use nanograd::{ Tensor, nn::transformation::exp2 };
 ///
 /// let tensor:Tensor<f64> = Tensor::new(vec![1.0, 2.0, 3.0, 4.0].into_boxed_slice(), (2, 2), None, None);
 /// let tensor_exp2 = exp2(tensor);
@@ -91,6 +95,13 @@ pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
+}
+
+pub fn log<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let new_val_base_two = log2(val);
+    let e = T::from_f64(E).unwrap();
+    let conversion_val = T::from_f64(2.0).unwrap().log(e);
+    new_val_base_two * conversion_val
 }
 
 pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
