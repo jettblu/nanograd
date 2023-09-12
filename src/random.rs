@@ -12,7 +12,7 @@ use crate::TensorTrait;
 /// # Examples
 ///
 /// ```
-/// use nanograd::random_number;
+/// use nanograd::random::random_number;
 ///
 /// let random_number:f64 = random_number(0.0, 1.0);
 /// ```
