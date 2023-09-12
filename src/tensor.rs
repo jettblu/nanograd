@@ -2,6 +2,7 @@ use core::panic;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
+use std::ops::Neg;
 use std::ops::Sub;
 use std::vec;
 
@@ -574,5 +575,18 @@ impl<T> fmt::Display for Tensor<T> where T: TensorTrait<T> {
             }
         }
         write!(f, ")\n")
+    }
+}
+
+// implement negation trait for tensor
+
+impl<T> Neg for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn neg(self) -> Tensor<T> {
+        // multiply by matrix with -1 on diagonal
+        let dim: Dimensions = self.dim();
+        let mut new_constant_tensor = Tensor::zeros(dim, None, Some(true));
+        new_constant_tensor.fill_diagonal(T::zero() - T::one());
+        mul(self, new_constant_tensor)
     }
 }
