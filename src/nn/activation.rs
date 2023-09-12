@@ -4,7 +4,7 @@ use std::f32::consts::E;
 use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops };
 
 use crate::nn::transformation::max;
-use crate::nn::transformation::log2;
+use crate::nn::transformation::log;
 /// Sigmoid function.
 ///
 /// # Arguments
@@ -63,6 +63,36 @@ pub fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     sigmoid(val * two) * two - one
 }
 
+///
+/// Applies the softmax function to the tensor.
+///
+/// # Arguments
+///
+/// * `val` - The tensor to apply the softmax function to.
+///
+/// # Returns
+///
+/// A tensor with the softmax function applied to it. New tensor has the same shape as the input tensor.
+///
+/// # Examples
+///
+/// ```
+/// use nanograd::{ Tensor, nn::activation::softmax };
+///
+/// let data = vec![1.0, 2.0, 3.0, 9.0].into_boxed_slice();
+///
+/// let tensor = Tensor::new(data, (2, 2), None, Some(true));
+///
+/// let tensor_softmax = softmax(tensor);
+///
+/// let expected_result = &vec![0.26894142734067883, 0.7310585726593212, 0.0024726236060504682, 0.9975273763939495].into_boxed_slice();
+///
+///
+/// assert_eq!(tensor_softmax.data(), expected_result);
+///
+/// ```
+///
+
 pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
     let mut new_data = Vec::with_capacity(dim.0 * dim.1);
@@ -100,5 +130,5 @@ pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 
 pub fn log_softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let x = softmax(val);
-    log2(x)
+    log(x)
 }
