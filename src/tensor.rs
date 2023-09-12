@@ -145,6 +145,10 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     pub fn dim(&self) -> Dimensions {
         self.lazy_data.dim()
     }
+
+    pub fn set_dim(&mut self, new_dim: Dimensions) {
+        self.lazy_data.set_dim(new_dim);
+    }
     /// Get data of tensor
     ///
     /// # Returns
@@ -379,6 +383,11 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         }
         let new_data: DataArray<T> = new_data.into_boxed_slice();
         self.lazy_data = LazyBuffer::new(new_data, dim, None);
+    }
+
+    pub fn flatten(&mut self) {
+        let dim: Dimensions = self.dim();
+        self.set_dim((1, dim.0 * dim.1));
     }
 }
 

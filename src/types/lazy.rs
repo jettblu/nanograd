@@ -39,6 +39,10 @@ impl<T> LazyBuffer<T> where T: TensorTrait<T> {
         // for now just return data since always realized
         self
     }
+
+    pub fn set_dim(&mut self, dim: Dimensions) {
+        self.dimensions = dim;
+    }
 }
 
 pub type DataArray<T> = Box<[T]>;
