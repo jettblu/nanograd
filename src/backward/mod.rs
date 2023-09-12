@@ -344,6 +344,52 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 )
             );
         }
+        Ops::UnaryOps(UnaryOps::LOG2) => {
+            match &mut val.prev {
+                None => {
+                    panic!("No parents");
+                }
+                Some(t) => {
+                    parents = t;
+                }
+            }
+            let curr_data = val.lazy_data.data();
+            // iterate through grad
+            let mut i: usize = 0;
+            let parent_grad_1: &Box<Tensor<T>>;
+            match parents[0].get_gradient() {
+                None => {
+                    panic!("No gradient");
+                }
+                Some(t) => {
+                    parent_grad_1 = t;
+                }
+            }
+            // get parent gradients
+            let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
+            let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
+
+            while i < dim.0 * dim.1 {
+                // log2 derivative
+                // 1 / (x * ln(2)) * curr grad + parent grad
+                let new_val =
+                    parent_grad_1_data[i] +
+                    grad_data[i] / (curr_data[i] * T::from_f64(E).unwrap().ln());
+                new_parent_grad_1.push(new_val);
+                i += 1;
+            }
+            // set gradients
+            parents[0].set_gradient(
+                Tensor::_build_raw(
+                    new_parent_grad_1.into_boxed_slice(),
+                    (dim.0.clone(), dim.1.clone()),
+                    None,
+                    None,
+                    None,
+                    None
+                )
+            );
+        }
         Ops::UnaryOps(UnaryOps::EXP2) => {
             // gradient flows through exp2
             match &mut val.prev {
@@ -392,6 +438,49 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
             panic!("Not implemented");
         }
         Ops::ReduceOps(ReduceOps::SUM) => {
+            // gradient flows through sum
+            match &mut val.prev {
+                None => {
+                    panic!("No parents");
+                }
+                Some(t) => {
+                    parents = t;
+                }
+            }
+            // iterate through grad
+            let mut i: usize = 0;
+            let parent_grad_1: &Box<Tensor<T>>;
+            match parents[0].get_gradient() {
+                None => {
+                    panic!("No gradient");
+                }
+                Some(t) => {
+                    parent_grad_1 = t;
+                }
+            }
+            // get parent gradients
+            let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
+            let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
+            while i < dim.0 * dim.1 {
+                // sum derivative
+                // 1 * curr grad + parent grad
+                let new_val = grad_data[i] + parent_grad_1_data[i];
+                new_parent_grad_1.push(new_val);
+                i += 1;
+            }
+            // set gradients
+            parents[0].set_gradient(
+                Tensor::_build_raw(
+                    new_parent_grad_1.into_boxed_slice(),
+                    (dim.0.clone(), dim.1.clone()),
+                    None,
+                    None,
+                    None,
+                    None
+                )
+            );
+        }
+        Ops::UnaryOps(UnaryOps::SUM) => {
             panic!("Not implemented");
         }
         // shouldn't need to implement these
