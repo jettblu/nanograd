@@ -348,6 +348,38 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         // run backward pass
         backward_helper(&mut new_visited, self)
     }
+
+    ///
+    /// Fill diagonal of tensor with value
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value to fill the diagonal with.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nanograd::Tensor;
+    ///
+    /// let mut tensor:Tensor<f64> = Tensor::ones((2, 2), None, None);
+    /// tensor.fill_diagonal(2.0);
+    /// ```
+    ///
+    pub fn fill_diagonal(&mut self, value: T) {
+        let dim: Dimensions = self.dim();
+        let mut i: usize = 0;
+        let mut j: usize = 0;
+        let mut new_data = vec![T::zero(); dim.0 * dim.1];
+        let mut index: usize = 0;
+        while i < dim.0 && j < dim.1 {
+            index = i * dim.1 + j;
+            new_data[index] = value;
+            i += 1;
+            j += 1;
+        }
+        let new_data: DataArray<T> = new_data.into_boxed_slice();
+        self.lazy_data = LazyBuffer::new(new_data, dim, None);
+    }
 }
 
 // TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
@@ -475,30 +507,37 @@ impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
     }
 }
 
-// TODO: CHECK WHAT NODES SHOULD BE ADDED AS PARENTS AND WHAT GRADIENT SHOULD BE
 // multiplication by scalar
 impl<T> Mul<T> for Tensor<T> where T: TensorTrait<T> {
     type Output = Tensor<T>;
     fn mul(self, other: T) -> Tensor<T> {
-        // panic for now while we figure out how to implement this
-        panic!("Not implemented");
+        // create new diagonal matrix with values of other
         let dim: Dimensions = self.dim();
-        let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-        let data: &DataArray<T> = self.data();
-        for i in 0..dim.0 * dim.1 {
-            new_data.push(data[i] * other);
-        }
-        let new_data: DataArray<T> = new_data.into_boxed_slice();
-        let mut new_tensor = Tensor::_build_raw(
-            new_data,
-            dim,
-            None,
-            Some(true),
-            Some(Ops::BinaryOps(BinaryOps::MUL)),
-            Some(vec![self])
-        );
-        new_tensor.set_gradient(Tensor::zeros(dim, None, None));
-        new_tensor
+        let mut new_constant_tensor = Tensor::zeros(dim, None, Some(true));
+        new_constant_tensor.fill_diagonal(other);
+        mul(self, new_constant_tensor)
+    }
+}
+
+// addition by scalar
+impl<T> Add<T> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn add(self, other: T) -> Tensor<T> {
+        // create new diagonal matrix with values of other
+        let dim: Dimensions = self.dim();
+        let new_constant_tensor = Tensor::full(dim, other, None, Some(true));
+        add(self, new_constant_tensor)
+    }
+}
+
+// subtraction by scalar
+impl<T> Sub<T> for Tensor<T> where T: TensorTrait<T> {
+    type Output = Tensor<T>;
+    fn sub(self, other: T) -> Tensor<T> {
+        // create new diagonal matrix with values of other
+        let dim: Dimensions = self.dim();
+        let mut new_constant_tensor = Tensor::full(dim, other, None, Some(true));
+        sub(self, new_constant_tensor)
     }
 }
 
