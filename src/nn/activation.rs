@@ -4,6 +4,7 @@ use std::f32::consts::E;
 use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops };
 
 use crate::nn::transformation::max;
+use crate::nn::transformation::log2;
 /// Sigmoid function.
 ///
 /// # Arguments
@@ -60,4 +61,44 @@ pub fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let one: T = T::one();
     let two: T = one + one;
     sigmoid(val * two) * two - one
+}
+
+pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let dim: Dimensions = val.dim();
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let val_data = val.data();
+    let exp_typed = T::from_f32(E);
+    let exp_typed: T = match exp_typed {
+        Some(exp_typed) => exp_typed,
+        None => panic!("Error converting E to T"),
+    };
+    // iterate through each row of the tensor
+    for i in 0..dim.0 {
+        // get the sum of the row
+        let mut sum: T = T::zero();
+        for j in 0..dim.1 {
+            sum = sum + exp_typed.pow(val_data[i * dim.1 + j]);
+        }
+        // iterate through each element in the row
+        for j in 0..dim.1 {
+            new_data.push(exp_typed.pow(val_data[i * dim.1 + j]) / sum);
+        }
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let mut new_tensor = Tensor::_build_raw(
+        new_data,
+        dim,
+        None,
+        Some(true),
+        Some(Ops::UnaryOps(UnaryOps::EXP2)),
+        Some(vec![val])
+    );
+    new_tensor.set_gradient(Tensor::zeros(dim, None, None));
+    new_tensor
+}
+
+pub fn log_softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
+    let x = softmax(val);
+    log2(x)
 }

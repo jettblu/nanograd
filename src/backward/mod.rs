@@ -434,6 +434,40 @@ pub fn backward_by_operation<T: TensorTrait<T>>(val: &mut Tensor<T>) {
                 )
             );
         }
+        Ops::UnaryOps(UnaryOps::Softmax) => {
+            match &mut val.prev {
+                None => {
+                    panic!("No parents");
+                }
+                Some(t) => {
+                    parents = t;
+                }
+            }
+            let curr_data = val.lazy_data.data();
+            // iterate through grad
+            let mut i: usize = 0;
+            let parent_grad_1: &Box<Tensor<T>>;
+            match parents[0].get_gradient() {
+                None => {
+                    panic!("No gradient");
+                }
+                Some(t) => {
+                    parent_grad_1 = t;
+                }
+            }
+            // get parent gradients
+            let mut new_parent_grad_1: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
+            let parent_grad_1_data: &DataArray<T> = parent_grad_1.data();
+            while i < dim.0 * dim.1 {
+                // softmax derivative
+                // softmax(x) * (1 - softmax(x)) * curr grad + parent grad
+                let softmax: T = curr_data[i];
+                new_parent_grad_1.push(
+                    parent_grad_1_data[i] + grad_data[i] * softmax * (T::one() - softmax)
+                );
+                i += 1;
+            }
+        }
         Ops::ReduceOps(ReduceOps::MAX) => {
             panic!("Not implemented");
         }

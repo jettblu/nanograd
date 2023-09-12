@@ -1,9 +1,11 @@
 use std::hash::Hash;
 
+// TODO: REMOVE SIGMOID AND SOFTMAX OPS... THEY SHOULD BE COMPOSITIONS OF OTHER OPS
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum UnaryOps {
     EXP2,
     Sigmoid,
+    Softmax,
     MAX,
     LOG2,
     SUM,
