@@ -1,8 +1,9 @@
 use core::panic;
 use std::f32::consts::E;
 
-use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops, max };
+use crate::{ TensorTrait, Tensor, Dimensions, DataArray, types::ops::UnaryOps, Ops };
 
+use crate::nn::transformation::max;
 /// Sigmoid function.
 ///
 /// # Arguments

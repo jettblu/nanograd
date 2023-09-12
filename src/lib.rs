@@ -24,21 +24,10 @@ pub use crate::types::lazy::DataArray;
 mod traits;
 pub use crate::traits::TensorTrait;
 
-mod random;
-pub use crate::random::random_number;
+pub mod random;
 
-mod helpers;
-pub use crate::helpers::is_valid_matrix_multiplication;
-pub use crate::helpers::new_dimensions_after_matrix_multiplication;
+pub mod helpers;
 
-mod backward;
-pub use crate::backward::backward_by_operation;
-pub use crate::backward::backward_helper;
+pub mod backward;
 
-mod nn;
-pub use crate::nn::activation::sigmoid;
-pub use crate::nn::activation::relu;
-pub use crate::nn::activation::leaky_relu;
-pub use crate::nn::transformation::exp2;
-pub use crate::nn::linear::Linear;
-pub use crate::nn::loss::categorical_cross_entropy;
+pub mod nn;

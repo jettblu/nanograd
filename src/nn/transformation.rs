@@ -1,12 +1,4 @@
-use crate::{
-    Tensor,
-    TensorTrait,
-    Dimensions,
-    DataArray,
-    types::ops::{ UnaryOps, ReduceOps },
-    Ops,
-    sigmoid,
-};
+use crate::{ Tensor, TensorTrait, Dimensions, DataArray, types::ops::{ UnaryOps, ReduceOps }, Ops };
 
 /// Raise each value in tensor to power of val
 ///

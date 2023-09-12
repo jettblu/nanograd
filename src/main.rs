@@ -1,5 +1,5 @@
 use nanograd::Tensor;
-use nanograd::sigmoid;
+use nanograd::nn::activation::relu;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -26,7 +26,9 @@ fn main() {
         None,
         Some(true)
     );
-    let mut tensor_g = tensor_f * tensor_e;
-    tensor_g.backward();
-    println!("{:}", tensor_g);
+    let tensor_g = tensor_f * tensor_e;
+    // relu test
+    let mut tensor_h = relu(tensor_g);
+    tensor_h.backward();
+    println!("{:}", tensor_h);
 }

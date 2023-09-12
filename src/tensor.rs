@@ -11,10 +11,10 @@ use crate::Dimensions;
 use crate::LazyBuffer;
 use crate::Ops;
 use crate::TensorTrait;
-use crate::backward_helper;
-use crate::is_valid_matrix_multiplication;
-use crate::new_dimensions_after_matrix_multiplication;
-use crate::random_number;
+use crate::backward::backward_helper;
+use crate::helpers::is_valid_matrix_multiplication;
+use crate::helpers::new_dimensions_after_matrix_multiplication;
+use crate::random::random_number;
 use crate::types::ops::BinaryOps;
 
 #[derive(Clone, Eq, PartialEq)]
