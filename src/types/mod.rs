@@ -5,3 +5,5 @@ pub mod device;
 pub mod ops;
 
 pub mod lazy;
+
+pub mod data;

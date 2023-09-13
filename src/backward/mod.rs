@@ -1,4 +1,4 @@
-use std::{ f64::consts::E, borrow::BorrowMut };
+use std::f64::consts::E;
 
 use crate::{
     Tensor,
