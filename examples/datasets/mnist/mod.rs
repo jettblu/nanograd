@@ -4,7 +4,9 @@ use std::fs::File;
 use std::io::{ Cursor, Read };
 
 use crate::TensorTrait;
-use crate::{ Tensor, types::data::DataAndLabels };
+use crate::Tensor;
+
+use nanograd::types::data::DataAndLabels;
 
 pub struct MnistImage {
     pub image: Tensor<f64>,

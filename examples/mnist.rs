@@ -1,4 +1,13 @@
-use nanograd::{ nn::{ linear::Linear, activation::tanh }, TensorTrait, Tensor };
+use nanograd::{
+    nn::{ linear::Linear, activation::tanh },
+    types::data::DataAndLabels,
+    TensorTrait,
+    Tensor,
+};
+
+use crate::datasets::mnist::fetch_mnist;
+// use mnist fetch
+mod datasets;
 
 struct TinyNet<T: TensorTrait<T>> {
     l1: Linear<T>,
@@ -21,5 +30,10 @@ impl<T: TensorTrait<T>> TinyNet<T> {
 }
 
 fn main() {
+    let a: Result<DataAndLabels<f64>, std::io::Error> = fetch_mnist("t10k");
+    match a {
+        Ok(_) => println!("Success!"),
+        Err(e) => println!("Error: {:?}", e),
+    }
     panic!("This example is not yet implemented")
 }

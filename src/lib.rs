@@ -32,5 +32,3 @@ pub mod helpers;
 pub mod backward;
 
 pub mod nn;
-
-pub mod extra;

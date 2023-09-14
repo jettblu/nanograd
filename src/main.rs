@@ -1,5 +1,4 @@
 use nanograd::Tensor;
-use nanograd::extra::datasets::mnist::fetch_mnist;
 use nanograd::nn::activation::{ tanh, softmax, log_softmax };
 use nanograd::nn::loss::categorical_cross_entropy;
 
@@ -40,9 +39,4 @@ fn main() {
     // let tensor_b = Tensor::new(data_test_labels, (2, 2), None, Some(true));
     // let tensor_result = categorical_cross_entropy(tensor_a, tensor_b);
     // println!("{:}", tensor_result);
-    let a: Result<DataAndLabels<f64>, std::io::Error> = fetch_mnist("t10k");
-    match a {
-        Ok(_) => println!("Success!"),
-        Err(e) => println!("Error: {:?}", e),
-    }
 }
