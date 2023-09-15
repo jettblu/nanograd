@@ -1,7 +1,7 @@
 #[derive(Clone, PartialEq, Eq)]
 pub enum Device {
     CPU,
-    CUDA,
+    OPENCL,
 }
 
 // TODO: add a function to detct env and set device accordingly
