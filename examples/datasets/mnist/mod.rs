@@ -53,7 +53,7 @@ pub fn fetch_mnist<T: TensorTrait<T>>(
     dataset_name: &str
 ) -> Result<FeaturesAndLabels<T>, std::io::Error> {
     println!("{}", std::env::current_dir().unwrap().display());
-    let base_path: &str = "src/extra/datasets/mnist/";
+    let base_path: &str = "src/examples/datasets/mnist/";
     let filename = format!("{}{}-labels-idx1-ubyte.gz", base_path, dataset_name);
     let label_data = &MnistData::new(&File::open(filename)?)?;
     let filename = format!("{}{}-images-idx3-ubyte.gz", base_path, dataset_name);
