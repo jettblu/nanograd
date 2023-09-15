@@ -29,7 +29,7 @@ pub fn random_number<T: TensorTrait<T>>(low: T, high: T) -> T {
     let random_unsigned = u32::from_le_bytes(buffer);
 
     // Convert the u32 random number to a floating-point number between 0 and 1
-    let random_float = (random_unsigned as f64) / (u32::MAX as f64);
+    let random_float = (random_unsigned as f32) / (u32::MAX as f32);
 
     let result_num = T::try_from(random_float);
     if result_num.is_err() {
