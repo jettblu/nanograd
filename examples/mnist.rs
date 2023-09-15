@@ -5,9 +5,9 @@ use nanograd::{
     Tensor,
 };
 
-use crate::datasets::mnist::fetch_mnist;
-// use mnist fetch
 mod datasets;
+use crate::datasets::mnist::fetch_mnist;
+
 
 struct TinyNet<T: TensorTrait<T>> {
     l1: Linear<T>,
