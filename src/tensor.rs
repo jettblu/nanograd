@@ -76,6 +76,10 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         }
     }
 
+    pub fn from_vec(data: Vec<T>, dimensions: Dimensions, device:Option<Device>, requires_grad: Option<bool>) -> Self {
+        Self::new(data.into_boxed_slice(), dimensions, device, requires_grad)
+    }
+
     /// Create a new tensor with full control over all fields. This is typically only needed for internal use.
     ///
     /// # Arguments
