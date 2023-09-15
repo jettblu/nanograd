@@ -1,4 +1,4 @@
-use std::hash::Hash;
+
 
 // TODO: REMOVE SIGMOID AND SOFTMAX OPS... THEY SHOULD BE COMPOSITIONS OF OTHER OPS
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -24,28 +24,11 @@ pub enum ReduceOps {
     MAX,
 }
 
-impl Hash for ReduceOps {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            ReduceOps::SUM => (1).hash(state),
-            ReduceOps::MAX => (2).hash(state),
-        }
-    }
-}
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TernaryOps {
     MULACC,
     WHERE,
-}
-
-impl Hash for TernaryOps {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            TernaryOps::MULACC => (3).hash(state),
-            TernaryOps::WHERE => (4).hash(state),
-        }
-    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -56,19 +39,6 @@ pub enum LoadOps {
     FROM,
     CONTIGUOUS,
     CUSTOM,
-}
-
-impl Hash for LoadOps {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            LoadOps::EMPTY => (5).hash(state),
-            LoadOps::RAND => (6).hash(state),
-            LoadOps::CONST => (7).hash(state),
-            LoadOps::FROM => (8).hash(state),
-            LoadOps::CONTIGUOUS => (9).hash(state),
-            LoadOps::CUSTOM => (10).hash(state),
-        }
-    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
