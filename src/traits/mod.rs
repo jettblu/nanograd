@@ -13,7 +13,7 @@ pub trait TensorTrait<T>: Zero +
     One +
     Clone +
     Copy +
-    TryFrom<f64> +
+    TryFrom<f32> +
     Display +
     Debug +
     ToPrimitive +
@@ -33,7 +33,7 @@ impl<T> TensorTrait<T>
             One +
             Clone +
             Copy +
-            TryFrom<f64> +
+            TryFrom<f32> +
             Display +
             Debug +
             ToPrimitive +
