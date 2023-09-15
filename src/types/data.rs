@@ -1,12 +1,12 @@
 use crate::{ Tensor, TensorTrait };
 
-pub struct DataAndLabels<T: TensorTrait<T>> {
-    data: Tensor<T>,
+pub struct FeaturesAndLabels<T: TensorTrait<T>> {
+    features: Tensor<T>,
     labels: Tensor<T>,
 }
 
-impl<T: TensorTrait<T>> DataAndLabels<T> {
-    pub fn new(data: Tensor<T>, labels: Tensor<T>) -> Self {
-        DataAndLabels { data, labels }
+impl<T: TensorTrait<T>> FeaturesAndLabels<T> {
+    pub fn new(features: Tensor<T>, labels: Tensor<T>) -> Self {
+        FeaturesAndLabels{ features, labels }
     }
 }

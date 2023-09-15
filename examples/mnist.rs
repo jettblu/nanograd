@@ -1,6 +1,6 @@
 use nanograd::{
     nn::{ linear::Linear, activation::tanh },
-    types::data::DataAndLabels,
+    types::data::FeaturesAndLabels,
     TensorTrait,
     Tensor,
 };
@@ -30,10 +30,16 @@ impl<T: TensorTrait<T>> TinyNet<T> {
 }
 
 fn main() {
-    let a: Result<DataAndLabels<f64>, std::io::Error> = fetch_mnist("t10k");
-    match a {
-        Ok(_) => println!("Success!"),
+    let mnist_train: Result<FeaturesAndLabels<f64>, std::io::Error> = fetch_mnist("train");
+    let mnist_test: Result<FeaturesAndLabels<f64>, std::io::Error> = fetch_mnist("t10k");
+    match mnist_test {
+        Ok(_) => println!("Loaded mnist test!"),
         Err(e) => println!("Error: {:?}", e),
     }
+    match mnist_train {
+        Ok(_) => println!("Loaded mnist train!"),
+        Err(e) => println!("Error: {:?}", e),
+    }
+
     panic!("This example is not yet implemented")
 }

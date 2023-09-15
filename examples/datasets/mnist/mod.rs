@@ -6,7 +6,7 @@ use std::io::{ Cursor, Read };
 use crate::TensorTrait;
 use crate::Tensor;
 
-use nanograd::types::data::DataAndLabels;
+use nanograd::types::data::FeaturesAndLabels;
 
 pub struct MnistImage {
     pub image: Tensor<f64>,
@@ -51,7 +51,7 @@ impl MnistData {
 
 pub fn fetch_mnist<T: TensorTrait<T>>(
     dataset_name: &str
-) -> Result<DataAndLabels<T>, std::io::Error> {
+) -> Result<FeaturesAndLabels<T>, std::io::Error> {
     println!("{}", std::env::current_dir().unwrap().display());
     let base_path: &str = "src/extra/datasets/mnist/";
     let filename = format!("{}{}-labels-idx1-ubyte.gz", base_path, dataset_name);
@@ -60,7 +60,7 @@ pub fn fetch_mnist<T: TensorTrait<T>>(
     let images_data = &MnistData::new(&File::open(filename)?)?;
     let image_shape = (images_data.sizes[1] * images_data.sizes[2]) as usize;
 
-    let output: DataAndLabels<T>;
+    let output: FeaturesAndLabels<T>;
 
     for i in 0..images_data.sizes[0] as usize {
         let start = i * image_shape;

@@ -20,7 +20,7 @@ pub use crate::types::ops::Ops;
 pub use crate::types::lazy::Dimensions;
 pub use crate::types::lazy::LazyBuffer;
 pub use crate::types::lazy::DataArray;
-pub use crate::types::data::DataAndLabels;
+pub use crate::types::data::FeaturesAndLabels;
 
 mod traits;
 pub use crate::traits::TensorTrait;

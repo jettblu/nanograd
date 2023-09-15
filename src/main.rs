@@ -2,14 +2,6 @@ use nanograd::Tensor;
 use nanograd::nn::activation::{ tanh, softmax, log_softmax };
 use nanograd::nn::loss::categorical_cross_entropy;
 
-use nanograd::types::data::DataAndLabels;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct Observation {
-    features: Vec<f64>,
-    label: f64,
-}
 
 fn main() {
     let data_a = vec![1.0, 2.0, 3.0, 9.0].into_boxed_slice();
