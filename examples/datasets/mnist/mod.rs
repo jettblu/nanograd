@@ -1,10 +1,8 @@
 use byteorder::{ BigEndian, ReadBytesExt };
 use flate2::read::GzDecoder;
+use nanograd::{ Tensor, TensorTrait };
 use std::fs::File;
 use std::io::{ Cursor, Read };
-
-use crate::TensorTrait;
-use crate::Tensor;
 
 use nanograd::types::data::FeaturesAndLabels;
 
@@ -49,11 +47,13 @@ impl MnistData {
     }
 }
 
+// run this example with:
+// cargo run --example mnist
 pub fn fetch_mnist<T: TensorTrait<T>>(
     dataset_name: &str
 ) -> Result<FeaturesAndLabels<T>, std::io::Error> {
     println!("{}", std::env::current_dir().unwrap().display());
-    let base_path: &str = "src/examples/datasets/mnist/";
+    let base_path: &str = "examples/datasets/mnist/";
     let filename = format!("{}{}-labels-idx1-ubyte.gz", base_path, dataset_name);
     let label_data = &MnistData::new(&File::open(filename)?)?;
     let filename = format!("{}{}-images-idx3-ubyte.gz", base_path, dataset_name);
