@@ -26,7 +26,6 @@ pub fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let one = T::one();
     for i in 0..dim.0 * dim.1 {
         new_data.push(exp_typed.pow(val_data[i]) / (one + exp_typed.pow(val_data[i])));
-        println!("new_data[{}] = {}", i, new_data[i]);
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
