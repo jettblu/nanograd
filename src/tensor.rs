@@ -1,4 +1,5 @@
 use core::panic;
+use std::borrow::BorrowMut;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
@@ -12,7 +13,7 @@ use crate::Dimensions;
 use crate::LazyBuffer;
 use crate::Ops;
 use crate::TensorTrait;
-use crate::backward::backward_helper;
+use crate::backward::orchestrator::backward_by_operation;
 use crate::helpers::is_valid_matrix_multiplication;
 use crate::helpers::new_dimensions_after_matrix_multiplication;
 use crate::random::random_number;
@@ -23,11 +24,13 @@ pub struct Tensor<T: TensorTrait<T>> {
     pub lazy_data: LazyBuffer<T>,
     requires_grad: bool,
     pub op: Ops,
-    // array of parents
-    pub prev: Option<Box<Vec<Tensor<T>>>>,
-    pub gradient: Option<Box<Tensor<T>>>,
+    pub left: Option<TensorRef<T>>,
+    pub right: Option<TensorRef<T>>,
+    pub gradient: Option<TensorRef<T>>,
     pub unique_id: i32,
 }
+
+pub type TensorRef<T> = Box<Tensor<T>>;
 
 impl<T> Tensor<T> where T: TensorTrait<T> {
     /// Create a new tensor.
@@ -70,13 +73,19 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             lazy_data,
             requires_grad,
             op: new_op,
-            prev: None,
+            left: None,
+            right: None,
             gradient: requires_grad.then(|| Box::from(Tensor::zeros(dimensions, None, None))),
             unique_id: rand_id,
         }
     }
 
-    pub fn from_vec(data: Vec<T>, dimensions: Dimensions, device:Option<Device>, requires_grad: Option<bool>) -> Self {
+    pub fn from_vec(
+        data: Vec<T>,
+        dimensions: Dimensions,
+        device: Option<Device>,
+        requires_grad: Option<bool>
+    ) -> Self {
         Self::new(data.into_boxed_slice(), dimensions, device, requires_grad)
     }
 
@@ -96,9 +105,10 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         device: Option<Device>,
         requires_grad: Option<bool>,
         op: Option<Ops>,
-        prev: Option<Vec<Tensor<T>>>
+        left: Option<Tensor<T>>,
+        right: Option<Tensor<T>>
     ) -> Tensor<T> {
-        Self::new_internal(data, dimensions, device, requires_grad, op, prev)
+        Self::new_internal(data, dimensions, device, requires_grad, op, left, right)
     }
 
     fn new_internal(
@@ -107,7 +117,8 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         device: Option<Device>,
         requires_grad: Option<bool>,
         op: Option<Ops>,
-        prev: Option<Vec<Tensor<T>>>
+        left: Option<Tensor<T>>,
+        right: Option<Tensor<T>>
     ) -> Self {
         if data.len() != dimensions.0 * dimensions.1 {
             panic!("Data length does not match dimensions");
@@ -121,21 +132,26 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             Some(op) => op,
             None => Ops::None,
         };
-        let new_prev = match prev {
-            Some(prev) => prev,
-            None => vec![],
-        };
         let rand_id = random_number(T::zero(), T::one()).to_f32();
         // create unique id
         let rand_id: i32 = match rand_id {
             Some(rand_id) => (rand_id * 10000000.0) as i32,
             None => panic!("Error converting random number to i32"),
         };
+        let new_left = match left {
+            None => None,
+            Some(left) => { Some(Box::from(left)) }
+        };
+        let new_right = match right {
+            None => None,
+            Some(right) => { Some(Box::from(right)) }
+        };
         Self {
             lazy_data,
             requires_grad,
             op: new_op,
-            prev: Some(Box::new(new_prev)),
+            left: new_left,
+            right: new_right,
             gradient: None,
             unique_id: rand_id,
         }
@@ -329,8 +345,11 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// # Returns
     ///
     /// * `gradient` - The gradient of the tensor. May be None.
-    pub fn get_gradient(&self) -> &Option<Box<Tensor<T>>> {
-        &self.gradient
+    pub fn get_gradient(&self) -> Option<&TensorRef<T>> {
+        match &self.gradient {
+            None => None,
+            Some(gradient) => Some(gradient),
+        }
     }
 
     /// Compute backward pass of tensor and its parents. This will update each parent's gradient.
@@ -344,18 +363,30 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// tensor.backward();
     /// ```
     ///
-    pub fn backward(&mut self) {
-        // check if requires grad
-        if !self.requires_grad {
-            return;
+    pub fn backward(&mut self, grad: &TensorRef<T>, sibling: Option<&TensorRef<T>>) {
+        let op = self.op;
+        // ASSUMING THE ROOT TENSOR IS THE ONLY TENSOR WITH NO OP
+        if op == Ops::None {
+            // fill gradient with ones
+            self.set_gradient(Tensor::ones(self.dim(), None, None));
         }
-        let mut new_visited: Vec<i32> = Vec::new();
-        // fill gradient with ones
-        self.set_gradient(Tensor::ones(self.dim(), None, None));
-        // print gradient of tensor
-        println!("gradient of tensor: {:}", self.get_gradient().as_ref().unwrap());
-        // run backward pass
-        backward_helper(&mut new_visited, self)
+        {
+            backward_by_operation(self, grad, sibling);
+        }
+        if self.left.is_some() {
+            let sibling: Option<&Box<Tensor<T>>> = match &self.right {
+                None => None,
+                Some(right) => Some(right),
+            };
+            self.left.as_mut().unwrap().backward(grad, sibling);
+        }
+        if self.right.is_some() {
+            let sibling: Option<&Box<Tensor<T>>> = match &self.left {
+                None => None,
+                Some(left) => Some(left),
+            };
+            self.right.as_mut().unwrap().backward(grad, sibling);
+        }
     }
 
     ///
@@ -421,7 +452,8 @@ fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::BinaryOps(BinaryOps::ADD)),
-        Some(vec![a, b])
+        Some(a),
+        Some(b)
     );
     new_tensor.set_gradient(Tensor::zeros(a_dim, None, None));
     new_tensor
@@ -461,7 +493,8 @@ fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::BinaryOps(BinaryOps::MUL)),
-        Some(vec![a, b])
+        Some(a),
+        Some(b)
     );
     new_tensor.set_gradient(Tensor::zeros(new_dim, None, None));
     new_tensor
@@ -491,7 +524,8 @@ fn sub<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::BinaryOps(BinaryOps::SUB)),
-        Some(vec![a, b])
+        Some(a),
+        Some(b)
     );
     new_tensor.set_gradient(Tensor::zeros(a_dim, None, None));
     new_tensor
