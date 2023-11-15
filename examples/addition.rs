@@ -1,5 +1,6 @@
 use nanograd::Value;
-
+// to run this example:
+// cargo run --example addition
 fn main() {
     println!();
     println!("Running addition example...");

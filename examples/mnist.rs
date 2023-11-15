@@ -8,7 +8,6 @@ use nanograd::{
 mod datasets;
 use crate::datasets::mnist::fetch_mnist;
 
-
 struct TinyNet<T: TensorTrait<T>> {
     l1: Linear<T>,
     l2: Linear<T>,
@@ -21,7 +20,7 @@ impl<T: TensorTrait<T>> TinyNet<T> {
             l2: Linear::new(128, 10, None),
         }
     }
-    fn forward(self, x: Tensor<T>) -> Tensor<T> {
+    fn forward(&mut self, x: Tensor<T>) -> Tensor<T> {
         let x_1 = self.l1.forward(x);
         let x_2 = self.l2.forward(x_1);
         let x_3 = tanh(x_2);
