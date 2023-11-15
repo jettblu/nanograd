@@ -20,13 +20,14 @@ impl<T: TensorTrait<T>> Linear<T> {
             bias: new_bias,
         }
     }
-    pub fn forward(mut self, input: Tensor<T>) -> Tensor<T> {
+    pub fn forward(&mut self, input: Tensor<T>) -> Tensor<T> {
         // transpose the weight matrix
-        self.weight.transpose();
-        let output = input * self.weight;
-        match self.bias {
-            Some(b) => output + b,
-            None => output,
-        }
+        // self.weight.transpose();
+        // let output = input * self.weight;
+        // match self.bias {
+        //     Some(b) => output + b,
+        //     None => output,
+        // }
+        return Tensor::zeros((1, 1), None, None);
     }
 }

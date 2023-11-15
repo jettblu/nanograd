@@ -28,7 +28,8 @@ fn exp<T: TensorTrait<T>>(base: T, power: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::UnaryOps(UnaryOps::EXP2)),
-        Some(vec![power])
+        Some(power),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
@@ -71,7 +72,8 @@ pub fn max<T: TensorTrait<T>>(val: Tensor<T>, other: T) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::UnaryOps(UnaryOps::MAX)),
-        Some(vec![val])
+        Some(val),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
@@ -91,7 +93,8 @@ pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::UnaryOps(UnaryOps::LOG2)),
-        Some(vec![val])
+        Some(val),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
@@ -123,7 +126,8 @@ pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::ReduceOps(ReduceOps::SUM)),
-        Some(vec![val])
+        Some(val),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor

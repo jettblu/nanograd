@@ -35,7 +35,8 @@ pub fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::UnaryOps(UnaryOps::Sigmoid)),
-        Some(vec![val])
+        Some(val),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
@@ -121,7 +122,8 @@ pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
         None,
         Some(true),
         Some(Ops::UnaryOps(UnaryOps::EXP2)),
-        Some(vec![val])
+        Some(val),
+        None
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
