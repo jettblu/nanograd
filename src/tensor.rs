@@ -367,29 +367,30 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// tensor.backward();
     /// ```
     ///
-    pub fn backward(&mut self, grad: &TensorRef<T>, sibling: Option<&TensorRef<T>>) {
+    pub fn backward(&mut self, grad: Option<&TensorRef<T>>, sibling: Option<&TensorRef<T>>) {
         let op = self.op;
         // ASSUMING THE ROOT TENSOR IS THE ONLY TENSOR WITH NO OP
-        if op == Ops::None {
+        if op == Ops::None && grad.is_none() {
             // fill gradient with ones
             self.set_gradient(Tensor::ones(self.dim(), None, None));
         }
-        {
-            backward_by_operation(self, grad, sibling);
+        if op != Ops::None && grad.is_none() && self.gradient.is_none() {
+            panic!("Gradient is none for non root tensor");
         }
+        let grad_to_pass: &Box<Tensor<T>> = self.gradient.as_ref().unwrap();
         if self.left.is_some() {
             let sibling: Option<&Box<Tensor<T>>> = match &self.right {
                 None => None,
                 Some(right) => Some(right),
             };
-            self.left.as_mut().unwrap().backward(grad, sibling);
+            self.left.as_mut().unwrap().backward(Some(grad_to_pass), sibling);
         }
         if self.right.is_some() {
             let sibling: Option<&Box<Tensor<T>>> = match &self.left {
                 None => None,
                 Some(left) => Some(left),
             };
-            self.right.as_mut().unwrap().backward(grad, sibling);
+            self.right.as_mut().unwrap().backward(Some(grad_to_pass), sibling);
         }
     }
 
