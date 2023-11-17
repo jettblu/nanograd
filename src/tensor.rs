@@ -167,6 +167,10 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
         self.lazy_data.dim()
     }
 
+    pub fn set_op(&mut self, op: Ops) {
+        self.op = op;
+    }
+
     pub fn set_dim(&mut self, new_dim: Dimensions) {
         self.lazy_data.set_dim(new_dim);
     }
@@ -429,7 +433,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
 
 // TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
 // math helpers
-fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
+fn add<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -446,12 +450,14 @@ fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
+    a.set_op(Ops::BinaryOps(BinaryOps::ADD));
+    b.set_op(Ops::BinaryOps(BinaryOps::ADD));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         a_dim,
         None,
         Some(true),
-        Some(Ops::BinaryOps(BinaryOps::ADD)),
+        Some(Ops::None),
         Some(a),
         Some(b)
     );
@@ -459,7 +465,7 @@ fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
-fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
+fn mul<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -487,12 +493,14 @@ fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
     let new_dim: Dimensions = new_dimensions_after_matrix_multiplication(a_dim, b_dim);
+    a.set_op(Ops::BinaryOps(BinaryOps::MUL));
+    b.set_op(Ops::BinaryOps(BinaryOps::MUL));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         new_dim,
         None,
         Some(true),
-        Some(Ops::BinaryOps(BinaryOps::MUL)),
+        Some(Ops::None),
         Some(a),
         Some(b)
     );
@@ -500,7 +508,7 @@ fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
-fn sub<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
+fn sub<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -518,12 +526,14 @@ fn sub<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
+    a.set_op(Ops::BinaryOps(BinaryOps::SUB));
+    b.set_op(Ops::BinaryOps(BinaryOps::SUB));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         a_dim,
         None,
         Some(true),
-        Some(Ops::BinaryOps(BinaryOps::SUB)),
+        Some(Ops::None),
         Some(a),
         Some(b)
     );
