@@ -1,5 +1,3 @@
-use std::{ f64::consts::E, borrow::BorrowMut };
-
 use crate::{
     Tensor,
     TensorTrait,
@@ -7,28 +5,27 @@ use crate::{
     backward::binary::backward_binary,
     backward::unary::backward_unary,
     backward::reduce::backward_reduce,
-    tensor::TensorRef,
-    types::ops::BinaryOps,
 };
 
-pub fn backward_by_operation<T: TensorTrait<T>>(
-    val: &mut Tensor<T>,
-    grad: &TensorRef<T>,
-    sibling: Option<&TensorRef<T>>
-) {
+pub fn backward_by_operation<T: TensorTrait<T>>(child: &mut Tensor<T>) {
     // control flow based on operation
     // get operation
-    let op = val.op;
+    let parent = child.left.as_mut().unwrap();
+    let op = child.op;
+    let grad = child.gradient.as_mut().unwrap();
+
     match op {
         Ops::BinaryOps(_) => {
-            let sibling_node = sibling.unwrap();
-            backward_binary(val, grad, sibling_node);
+            println!("binary here!");
+            let parent_2 = child.right.as_mut().unwrap();
+            println!("binary here again!");
+            backward_binary(parent, parent_2, grad, op);
         }
         Ops::ReduceOps(_) => {
-            backward_reduce(val, grad);
+            backward_reduce(parent, grad);
         }
         Ops::UnaryOps(_) => {
-            backward_unary(val, grad);
+            backward_unary(parent, grad);
         }
         // shouldn't need to implement these
         Ops::TernaryOps(_) => {

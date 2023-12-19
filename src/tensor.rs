@@ -284,6 +284,43 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     }
 
     //
+    // run a recursive call to print the tensor and all of its parents and their gradients/data
+    pub fn print_path(&self, depth: usize) {
+        let mut i = 0;
+        while i < depth {
+            print!("\t");
+            i += 1;
+        }
+        println!(
+            "tensor: {:?} requires_grad: {:?} op: {:?}",
+            self.unique_id,
+            self.requires_grad,
+            self.op
+        );
+        if self.gradient.is_some() {
+            let mut i = 0;
+            while i < depth {
+                print!("\t");
+                i += 1;
+            }
+            // print gradient data
+            println!("gradient: {:?}", self.gradient.as_ref().unwrap().data());
+        }
+        if self.left.is_some() {
+            self.left
+                .as_ref()
+                .unwrap()
+                .print_path(depth + 1);
+        }
+        if self.right.is_some() {
+            self.right
+                .as_ref()
+                .unwrap()
+                .print_path(depth + 1);
+        }
+    }
+
+    //
     // Generate a tensor with random values drawn from a uniform distribution between 0 and 1.
     //
     // # Arguments
@@ -367,31 +404,52 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     /// tensor.backward();
     /// ```
     ///
-    pub fn backward(&mut self, grad: Option<&TensorRef<T>>, sibling: Option<&TensorRef<T>>) {
-        let op = self.op;
+    // pub fn backward(&mut self) {
+    //     let op = self.op;
+    //     // ASSUMING THE ROOT TENSOR IS THE ONLY TENSOR WITH NO OP
+    //     if op == Ops::None {
+    //         // fill gradient with ones
+    //         self.set_gradient(Tensor::ones(self.dim(), None, None));
+    //     }
+    //     let grad_to_pass: &mut Box<Tensor<T>> = self.gradient.as_mut().unwrap();
+    //     backward_by_operation(self.left.unwrap(), self, true);
+    //     if self.left.is_some() {
+    //         let sibling: Option<&Box<Tensor<T>>> = match &self.right {
+    //             None => None,
+    //             Some(right) => Some(right),
+    //         };
+    //         self.left.as_mut().unwrap().backward();
+    //     }
+    //     if self.right.is_some() {
+    //         let sibling: Option<&Box<Tensor<T>>> = match &self.left {
+    //             None => None,
+    //             Some(left) => Some(left),
+    //         };
+    //         self.right.as_mut().unwrap().backward();
+    //     }
+    // }
+    pub fn backward(&mut self) {
         // ASSUMING THE ROOT TENSOR IS THE ONLY TENSOR WITH NO OP
-        if op == Ops::None && grad.is_none() {
-            // fill gradient with ones
-            self.set_gradient(Tensor::ones(self.dim(), None, None));
+
+        self.set_gradient(Tensor::ones(self.dim(), None, None));
+
+        self.backward_internal();
+    }
+
+    fn backward_internal(&mut self) {
+        if self.has_parents() {
+            backward_by_operation(self);
         }
-        if op != Ops::None && grad.is_none() && self.gradient.is_none() {
-            panic!("Gradient is none for non root tensor");
-        }
-        let grad_to_pass: &Box<Tensor<T>> = self.gradient.as_ref().unwrap();
         if self.left.is_some() {
-            let sibling: Option<&Box<Tensor<T>>> = match &self.right {
-                None => None,
-                Some(right) => Some(right),
-            };
-            self.left.as_mut().unwrap().backward(Some(grad_to_pass), sibling);
+            self.left.as_mut().unwrap().backward_internal();
         }
         if self.right.is_some() {
-            let sibling: Option<&Box<Tensor<T>>> = match &self.left {
-                None => None,
-                Some(left) => Some(left),
-            };
-            self.right.as_mut().unwrap().backward(Some(grad_to_pass), sibling);
+            self.right.as_mut().unwrap().backward_internal();
         }
+    }
+
+    fn has_parents(&self) -> bool {
+        self.left.is_some() || self.right.is_some()
     }
 
     ///
@@ -434,7 +492,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
 
 // TODO: ONLY ADD GRADIENT/PREV IF REQUIRES GRAD IS TRUE
 // math helpers
-fn add<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
+fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -451,14 +509,12 @@ fn add<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
-    a.set_op(Ops::BinaryOps(BinaryOps::ADD));
-    b.set_op(Ops::BinaryOps(BinaryOps::ADD));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         a_dim,
         None,
         Some(true),
-        Some(Ops::None),
+        Some(Ops::BinaryOps(BinaryOps::ADD)),
         Some(a),
         Some(b)
     );
@@ -466,7 +522,7 @@ fn add<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
-fn mul<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
+fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -494,14 +550,12 @@ fn mul<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
     let new_dim: Dimensions = new_dimensions_after_matrix_multiplication(a_dim, b_dim);
-    a.set_op(Ops::BinaryOps(BinaryOps::MUL));
-    b.set_op(Ops::BinaryOps(BinaryOps::MUL));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         new_dim,
         None,
         Some(true),
-        Some(Ops::None),
+        Some(Ops::BinaryOps(BinaryOps::MUL)),
         Some(a),
         Some(b)
     );
@@ -509,7 +563,7 @@ fn mul<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
-fn sub<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
+fn sub<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -527,14 +581,12 @@ fn sub<T: TensorTrait<T>>(mut a: Tensor<T>, mut b: Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
-    a.set_op(Ops::BinaryOps(BinaryOps::SUB));
-    b.set_op(Ops::BinaryOps(BinaryOps::SUB));
     let mut new_tensor = Tensor::new_internal(
         new_data,
         a_dim,
         None,
         Some(true),
-        Some(Ops::None),
+        Some(Ops::BinaryOps(BinaryOps::SUB)),
         Some(a),
         Some(b)
     );
@@ -595,7 +647,7 @@ impl<T> Sub<T> for Tensor<T> where T: TensorTrait<T> {
     fn sub(self, other: T) -> Tensor<T> {
         // create new diagonal matrix with values of other
         let dim: Dimensions = self.dim();
-        let mut new_constant_tensor = Tensor::full(dim, other, None, Some(true));
+        let new_constant_tensor = Tensor::full(dim, other, None, Some(true));
         sub(self, new_constant_tensor)
     }
 }
