@@ -22,10 +22,10 @@ pub fn backward_by_operation<T: TensorTrait<T>>(child: &mut Tensor<T>) {
             backward_binary(parent, parent_2, grad, op);
         }
         Ops::ReduceOps(_) => {
-            backward_reduce(parent, grad);
+            backward_reduce(parent, grad, op);
         }
         Ops::UnaryOps(_) => {
-            backward_unary(parent, grad);
+            backward_unary(parent, grad, op);
         }
         // shouldn't need to implement these
         Ops::TernaryOps(_) => {

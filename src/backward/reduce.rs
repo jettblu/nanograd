@@ -8,13 +8,16 @@ use crate::{
     tensor::TensorRef,
 };
 
-pub fn backward_reduce<T: TensorTrait<T>>(parent: &mut Tensor<T>, child_grad: &TensorRef<T>) {
-    let op = parent.op;
+pub fn backward_reduce<T: TensorTrait<T>>(
+    parent: &mut Tensor<T>,
+    child_grad: &TensorRef<T>,
+    op: Ops
+) {
     // get dimensions of gradient
-    let dim: Dimensions = child_grad.dim();
+    let dim: Dimensions = parent.dim();
     // get data
     let grad_child_data: &DataArray<T> = child_grad.data();
-    let grad_parent_data: &DataArray<T> = parent.data();
+    let parent_data: &DataArray<T> = parent.data();
 
     let mut new_grad: Vec<T> = Vec::with_capacity(dim.0 * dim.1);
     match op {
@@ -27,7 +30,7 @@ pub fn backward_reduce<T: TensorTrait<T>>(parent: &mut Tensor<T>, child_grad: &T
             while i < dim.0 * dim.1 {
                 // sum derivative
                 // 1 * curr child_grad + parent child_grad
-                let new_val = grad_parent_data[i] + grad_child_data[i];
+                let new_val = parent_data[i] + grad_child_data[i];
                 new_grad.push(new_val);
                 i += 1;
             }

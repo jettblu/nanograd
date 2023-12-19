@@ -10,10 +10,13 @@ use crate::{
     tensor::TensorRef,
 };
 
-pub fn backward_unary<T: TensorTrait<T>>(parent: &mut Tensor<T>, child_grad: &TensorRef<T>) {
-    let op = parent.op;
+pub fn backward_unary<T: TensorTrait<T>>(
+    parent: &mut Tensor<T>,
+    child_grad: &TensorRef<T>,
+    op: Ops
+) {
     // get dimensions of gradient
-    let dim: Dimensions = child_grad.dim();
+    let dim: Dimensions = parent.dim();
     // get data
     let grad_child_data: &DataArray<T> = child_grad.data();
     let grad_parent_data: &DataArray<T> = parent.data();
