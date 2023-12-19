@@ -81,12 +81,8 @@ pub fn max<T: TensorTrait<T>>(val: Tensor<T>, other: T) -> Tensor<T> {
 
 pub fn log2<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
     let data: &DataArray<T> = val.data();
-    for i in 0..dim.0 * dim.1 {
-        new_data.push(data[i].log2());
-    }
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let new_data = log2_op(data, dim);
     let mut new_tensor = Tensor::_build_raw(
         new_data,
         dim,
@@ -109,17 +105,10 @@ pub fn log<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 
 pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
-    // container for new data
-    let mut new_data = Vec::with_capacity(1);
     // get data
     let data: &DataArray<T> = val.data();
-    // runnning sum
-    let mut sum = T::zero();
-    for i in 0..dim.0 * dim.1 {
-        sum = sum + data[i];
-    }
-    new_data.push(sum);
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    // get running sum
+    let new_data = sum_op(data, dim);
     let mut new_tensor = Tensor::_build_raw(
         new_data,
         (1, 1),
@@ -131,4 +120,48 @@ pub fn sum<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     );
     new_tensor.set_gradient(Tensor::zeros(dim, None, None));
     new_tensor
+}
+
+// ..... ops .....
+
+pub fn exp2_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let two = T::from_f32(2.0).unwrap();
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(two.pow(data[i]));
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
+}
+
+pub fn log2_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(data[i].log2());
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
+}
+
+pub fn max_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions, other: T) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(data[i].max(other));
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
+}
+
+pub fn sum_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(1);
+    let mut sum = T::zero();
+    for i in 0..dim.0 * dim.1 {
+        sum = sum + data[i];
+    }
+    new_data.push(sum);
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
 }

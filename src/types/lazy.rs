@@ -34,6 +34,10 @@ impl<T> LazyBuffer<T> where T: TensorTrait<T> {
         self.realized
     }
 
+    pub fn set_data(&mut self, data: DataArray<T>) {
+        self.data = data;
+    }
+
     pub fn realize(&self) -> &LazyBuffer<T> {
         // TODO: implement
         // for now just return data since always realized

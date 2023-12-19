@@ -16,19 +16,8 @@ use crate::nn::transformation::log;
 /// A tensor with the sigmoid function applied to it element-wise.
 pub fn sigmoid<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
-    let val_data = val.data();
-    let exp_typed = T::from_f32(E);
-    let exp_typed: T = match exp_typed {
-        Some(exp_typed) => exp_typed,
-        None => panic!("Error converting E to T"),
-    };
-    let one = T::one();
-    for i in 0..dim.0 * dim.1 {
-        new_data.push(exp_typed.pow(val_data[i]) / (one + exp_typed.pow(val_data[i])));
-    }
-    // create Box<[T]> from Vec<T>
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let data: &DataArray<T> = val.data();
+    let new_data = sigmoid_op(data, dim);
     let mut new_tensor = Tensor::_build_raw(
         new_data,
         dim,
@@ -95,27 +84,8 @@ pub fn tanh<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
 
 pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let dim: Dimensions = val.dim();
-    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
     let val_data = val.data();
-    let exp_typed = T::from_f32(E);
-    let exp_typed: T = match exp_typed {
-        Some(exp_typed) => exp_typed,
-        None => panic!("Error converting E to T"),
-    };
-    // iterate through each row of the tensor
-    for i in 0..dim.0 {
-        // get the sum of the row
-        let mut sum: T = T::zero();
-        for j in 0..dim.1 {
-            sum = sum + exp_typed.pow(val_data[i * dim.1 + j]);
-        }
-        // iterate through each element in the row
-        for j in 0..dim.1 {
-            new_data.push(exp_typed.pow(val_data[i * dim.1 + j]) / sum);
-        }
-    }
-    // create Box<[T]> from Vec<T>
-    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    let new_data = softmax_op(val_data, dim);
     let mut new_tensor = Tensor::_build_raw(
         new_data,
         dim,
@@ -129,7 +99,49 @@ pub fn softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
+// .... ops
+
 pub fn log_softmax<T: TensorTrait<T>>(val: Tensor<T>) -> Tensor<T> {
     let x = softmax(val);
     log(x)
+}
+
+fn sigmoid_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let exp_typed = T::from_f32(E);
+    let exp_typed: T = match exp_typed {
+        Some(exp_typed) => exp_typed,
+        None => panic!("Error converting E to T"),
+    };
+    let one = T::one();
+    for i in 0..dim.0 * dim.1 {
+        new_data.push(exp_typed.pow(data[i]) / (one + exp_typed.pow(data[i])));
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
+}
+
+fn softmax_op<T: TensorTrait<T>>(data: &DataArray<T>, dim: Dimensions) -> DataArray<T> {
+    let mut new_data = Vec::with_capacity(dim.0 * dim.1);
+    let exp_typed = T::from_f32(E);
+    let exp_typed: T = match exp_typed {
+        Some(exp_typed) => exp_typed,
+        None => panic!("Error converting E to T"),
+    };
+    // iterate through each row of the tensor
+    for i in 0..dim.0 {
+        // get the sum of the row
+        let mut sum: T = T::zero();
+        for j in 0..dim.1 {
+            sum = sum + exp_typed.pow(data[i * dim.1 + j]);
+        }
+        // iterate through each element in the row
+        for j in 0..dim.1 {
+            new_data.push(exp_typed.pow(data[i * dim.1 + j]) / sum);
+        }
+    }
+    // create Box<[T]> from Vec<T>
+    let new_data: DataArray<T> = new_data.into_boxed_slice();
+    new_data
 }

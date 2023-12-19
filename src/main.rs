@@ -1,7 +1,4 @@
 use nanograd::Tensor;
-use nanograd::nn::activation::{ tanh, softmax, log_softmax };
-use nanograd::nn::loss::categorical_cross_entropy;
-
 
 fn main() {
     let data_a = vec![1.0, 2.0, 3.0, 9.0].into_boxed_slice();

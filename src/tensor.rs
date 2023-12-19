@@ -28,6 +28,7 @@ pub struct Tensor<T: TensorTrait<T>> {
     pub right: Option<TensorRef<T>>,
     pub gradient: Option<TensorRef<T>>,
     pub unique_id: i32,
+    pub is_input: bool,
 }
 
 pub type TensorRef<T> = Box<Tensor<T>>;
@@ -77,6 +78,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             right: None,
             gradient: requires_grad.then(|| Box::from(Tensor::zeros(dimensions, None, None))),
             unique_id: rand_id,
+            is_input: false,
         }
     }
 
@@ -154,6 +156,7 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
             right: new_right,
             gradient: None,
             unique_id: rand_id,
+            is_input: false,
         }
     }
 
@@ -190,6 +193,17 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     // get requires_grad
     pub fn requires_grad(&self) -> &bool {
         &self.requires_grad
+    }
+
+    ///
+    /// set data
+    ///
+    /// # Arguments
+    ///
+    /// * `new_data` - The new data to set.
+    ///
+    pub fn set_data(&mut self, new_data: DataArray<T>) {
+        self.lazy_data.set_data(new_data);
     }
 
     /// Exchange rows and columns of tensor
@@ -281,6 +295,10 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
 
     pub fn ones_like(other: Tensor<T>) -> Self {
         Self::full_like(other, T::one())
+    }
+
+    pub fn set_as_input(&mut self) {
+        self.requires_grad = false;
     }
 
     //
@@ -428,9 +446,23 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
     //         self.right.as_mut().unwrap().backward();
     //     }
     // }
+    pub fn forward(&mut self, new_data: Tensor<T>) {
+        // new tensor data should not require grad
+        assert_eq!(new_data.requires_grad(), &false);
+        // run new data through computation graph
+        self.replace_input(new_data);
+        self.forward_internal();
+    }
+    pub fn forward_internal(&mut self) {
+        // run new data through computation graph
+        if self.left.is_some() {
+            self.left.as_mut().unwrap().forward_internal();
+        }
+        if self.right.is_some() {
+            self.right.as_mut().unwrap().forward_internal();
+        }
+    }
     pub fn backward(&mut self) {
-        // ASSUMING THE ROOT TENSOR IS THE ONLY TENSOR WITH NO OP
-
         self.set_gradient(Tensor::ones(self.dim(), None, None));
 
         self.backward_internal();
@@ -450,6 +482,46 @@ impl<T> Tensor<T> where T: TensorTrait<T> {
 
     fn has_parents(&self) -> bool {
         self.left.is_some() || self.right.is_some()
+    }
+
+    ///
+    /// Walks through computation graph and replaces input tensor with new tensor.
+    /// This is used to update the input tensor with new values.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_input` - The new input tensor.
+    ///
+    ///
+    /// # Returns
+    ///
+    /// * `is_replaced` - Whether or not the input tensor was replaced.
+    ///
+    /// # Notes
+    ///
+    /// * This function is recursive and currently only checks the left child.
+    fn replace_input(&mut self, new_input: Tensor<T>) -> bool {
+        if self.is_input {
+            // replace input
+            self.lazy_data = new_input.lazy_data;
+            self.requires_grad = new_input.requires_grad;
+            self.op = new_input.op;
+            self.left = new_input.left;
+            self.right = new_input.right;
+            self.gradient = new_input.gradient;
+            self.unique_id = new_input.unique_id;
+            self.is_input = true;
+            true
+        } else {
+            let mut is_replaced = false;
+            if self.left.is_some() {
+                is_replaced = self.left.as_mut().unwrap().replace_input(new_input);
+            }
+            // if self.right.is_some() && !is_replaced {
+            //     self.right.as_mut().unwrap().replace_input(new_input);
+            // }
+            is_replaced
+        }
     }
 
     ///
@@ -522,7 +594,7 @@ fn add<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     new_tensor
 }
 
-fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
+fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>, add_to_graph: bool) -> Tensor<T> {
     // make sure dimensions match
     let a_dim: Dimensions = a.dim();
     let b_dim: Dimensions = b.dim();
@@ -549,6 +621,7 @@ fn mul<T: TensorTrait<T>>(a: Tensor<T>, b: Tensor<T>) -> Tensor<T> {
     }
     // create Box<[T]> from Vec<T>
     let new_data: DataArray<T> = new_data.into_boxed_slice();
+
     let new_dim: Dimensions = new_dimensions_after_matrix_multiplication(a_dim, b_dim);
     let mut new_tensor = Tensor::new_internal(
         new_data,
@@ -614,7 +687,7 @@ impl<T> Sub<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
 impl<T> Mul<Tensor<T>> for Tensor<T> where T: TensorTrait<T> {
     type Output = Tensor<T>;
     fn mul(self, other: Tensor<T>) -> Tensor<T> {
-        mul(self, other)
+        mul(self, other, true)
     }
 }
 
@@ -626,7 +699,7 @@ impl<T> Mul<T> for Tensor<T> where T: TensorTrait<T> {
         let dim: Dimensions = self.dim();
         let mut new_constant_tensor = Tensor::zeros(dim, None, Some(true));
         new_constant_tensor.fill_diagonal(other);
-        mul(self, new_constant_tensor)
+        mul(self, new_constant_tensor, true)
     }
 }
 
@@ -688,6 +761,6 @@ impl<T> Neg for Tensor<T> where T: TensorTrait<T> {
         let dim: Dimensions = self.dim();
         let mut new_constant_tensor = Tensor::zeros(dim, None, Some(true));
         new_constant_tensor.fill_diagonal(T::zero() - T::one());
-        mul(self, new_constant_tensor)
+        mul(self, new_constant_tensor, true)
     }
 }
